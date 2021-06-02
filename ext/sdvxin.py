@@ -55,6 +55,12 @@ async def search(ctx, *, query):
     result['partial'].sort(reverse=True)
     result['partial'] = [e for e in result['partial'] if result['partial'][0][0] - e[0] <= CONFIDENCE_INTERVAL]
 
+    if len(result['partial']) == 0:
+        embed = Embed(title='No results found!')
+        embed.set_author(name=f'Results for query "{query}":')
+        embed.set_footer(text='Powered by sdvx.in')
+        await ctx.send(embed=embed)
+
     if len(result['partial']) == 1:
         song_id = result['partial'][0][1]
         await send_result(ctx, song_id)
@@ -72,6 +78,10 @@ async def search(ctx, *, query):
         embed.set_author(name=f'Results for query "{query}":')
         embed.set_footer(text='Powered by sdvx.in')
         await ctx.send(embed=embed)
+
+
+# TODO: admin only command to add alternative spelling
+#       admin only command to edit song metadata
 
 
 def setup(bot):
@@ -94,7 +104,8 @@ async def send_result(ctx, song_id):
     for dn, url in zip(diff_names, urls):
         links.append(f'[{dn}]({url})')
 
-    embed = Embed(title=d['title'], description=' - '.join(links))
+    embed = Embed(title=d['artist'], description=' - '.join(links))
+    embed.set_author(name=f'{d["title"]} ({song_id})')
     embed.set_thumbnail(url='/'.join([BASE_DOMAIN, d['version'][0], 'jacket', song_id + suffix]))
     embed.set_footer(text='Powered by sdvx.in')
     await ctx.send(embed=embed)
