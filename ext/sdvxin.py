@@ -21,25 +21,32 @@ load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 
 
-@commands.group()
+@commands.group(invoke_without_command=True)
 async def sdvxin(ctx, *args):
     """ SDVX.in related commands """
     if ctx.invoked_subcommand is None:
         await search(ctx, query=' '.join(args))
 
 
+@sdvxin.command(hidden=True)
+async def fullsearch(ctx, *, query):
+    """ Searches for a SDVX song title, no limit on multiple results """
+    await _search(ctx, query, True)
+
+
 @sdvxin.command()
 async def search(ctx, *, query):
     """ Searches for a SDVX song title """
+    await _search(ctx, query)
+
+
+async def _search(ctx, query, list_all=False):
     query = query.lower()
 
     # Search database
     result = collections.defaultdict(list)
-    for song_id, data in song_db.items():
-        strings = [song_id, data['title']] + data['alt_title']
-        if data['title'].isascii():
-            strings.append(re.sub('[^a-zA-Z0-9]', ' ', data['title']))
-        strings = [s.lower() for s in strings]
+    for song_id in song_db:
+        strings = get_aliases(song_id)
 
         result['ratio'].append((max([fuzz.ratio(query, s) for s in strings]), song_id))
         partial_result = [fuzz.partial_ratio(query, s) for s in strings if len(s) >= len(query)]
@@ -72,7 +79,7 @@ async def search(ctx, *, query):
         await send_result(ctx, song_id)
         return
 
-    if len(result['partial']) <= 5:
+    if len(result['partial']) <= 5 or list_all:
         text = '\n'.join([f'**{escape_markdown(song_db[e[1]]["title"])}** ({e[1]})' for e in result['partial']])
 
         embed = Embed(title='Multiple results -- refine query or provide song ID.', description=text)
@@ -86,12 +93,19 @@ async def search(ctx, *, query):
         await ctx.send(embed=embed)
 
 
+@sdvxin.command(hidden=True)
+@commands.has_role(ROLE_ID)
+async def listalias(ctx, *, song_id):
+    aliases = get_aliases(song_id)
+    text = '\n'.join([f'"{escape_markdown(e)}"' for e in aliases])
+
+    embed = Embed(title=f'Aliases for {song_db[song_id]["title"]} ({song_id}):', description=text)
+    embed.set_footer(text='Powered by sdvx.in')
+    await ctx.send(embed=embed)
+    
+
 # TODO: admin only command to add alternative spelling
 #       admin only command to edit song metadata
-
-
-def setup(bot):
-    bot.add_command(sdvxin)
 
 
 async def send_result(ctx, song_id):
@@ -114,6 +128,18 @@ async def send_result(ctx, song_id):
     embed.set_thumbnail(url='/'.join([BASE_DOMAIN, d['version'][0], 'jacket', song_id + suffix]))
     embed.set_footer(text='Powered by sdvx.in')
     await ctx.send(embed=embed)
+
+
+def setup(bot):
+    bot.add_command(sdvxin)
+
+
+def get_aliases(song_id):
+    data = song_db[song_id]
+    strings = [song_id, data['title']] + data['alt_title']
+    if data['title'].isascii():
+        strings.append(re.sub('[^a-zA-Z0-9]', ' ', data['title']))
+    return [s.lower() for s in strings]
 
 
 with open('ext/sdvxin_db.json', 'r') as f:
