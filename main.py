@@ -27,8 +27,9 @@ async def reload(ctx, *args):
 
 @bot.listen('on_command_error')
 async def error_handler(ctx, err):
-    await ctx.message.add_reaction('⛔')
-    await ctx.send(f'{type(err).__name__}: {err}', delete_after=10)
+    if not isinstance(err, commands.CommandNotFound):
+        await ctx.message.add_reaction('⛔')
+        await ctx.send(f'{type(err).__name__}: {err}', delete_after=10)
 
 
 @bot.event
