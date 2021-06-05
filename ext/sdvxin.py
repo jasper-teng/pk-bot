@@ -5,6 +5,7 @@ import re
 
 from discord import Embed
 from discord.ext import commands
+from discord.utils import escape_markdown
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 
@@ -72,7 +73,7 @@ async def search(ctx, *, query):
         return
 
     if len(result['partial']) <= 5:
-        text = '\n'.join([f'**{song_db[e[1]]["title"]}** ({e[1]})' for e in result['partial']])
+        text = '\n'.join([f'**{escape_markdown(song_db[e[1]]["title"])}** ({e[1]})' for e in result['partial']])
 
         embed = Embed(title='Multiple results -- refine query or provide song ID.', description=text)
         embed.set_author(name=f'Results for query "{query}":')
@@ -111,7 +112,6 @@ async def send_result(ctx, song_id):
     embed = Embed(title=d['artist'], description=' - '.join(links))
     embed.set_author(name=f'{d["title"]} ({song_id})')
     embed.set_thumbnail(url='/'.join([BASE_DOMAIN, d['version'][0], 'jacket', song_id + suffix]))
-    print('/'.join([BASE_DOMAIN, d['version'][0], 'jacket', song_id + suffix]))
     embed.set_footer(text='Powered by sdvx.in')
     await ctx.send(embed=embed)
 
