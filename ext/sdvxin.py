@@ -1,9 +1,11 @@
 import collections
 import json
+import os
 import re
 
 from discord import Embed
 from discord.ext import commands
+from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 
 CONFIDENCE_INTERVAL = 5
@@ -13,6 +15,9 @@ BASE_DIFF_NAMES = ['NOV', 'ADV', 'EXH', '', 'MXM']
 BASE_DIFF_SUFFIX = ['n', 'a', 'e', '', 'm']
 EXTRA_DIFF_NAMES = ['', 'INF', 'GRV', 'HVN', 'VVD']
 EXTRA_DIFF_SUFFIX= ['', 'i', 'g', 'h', 'v']
+
+load_dotenv()
+ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 
 
 @commands.group()
@@ -89,7 +94,6 @@ def setup(bot):
 
 
 async def send_result(ctx, song_id):
-    # TODO: include song artist (meaning trawling the fucking pages again)
     d = song_db[song_id]
     suffix = 'e.png' if d['levels'][4] == 0 else 'm.png'
     diff_names = [BASE_DIFF_NAMES[i] for i, lv in enumerate(d['levels']) if lv != 0]
@@ -107,6 +111,7 @@ async def send_result(ctx, song_id):
     embed = Embed(title=d['artist'], description=' - '.join(links))
     embed.set_author(name=f'{d["title"]} ({song_id})')
     embed.set_thumbnail(url='/'.join([BASE_DOMAIN, d['version'][0], 'jacket', song_id + suffix]))
+    print('/'.join([BASE_DOMAIN, d['version'][0], 'jacket', song_id + suffix]))
     embed.set_footer(text='Powered by sdvx.in')
     await ctx.send(embed=embed)
 

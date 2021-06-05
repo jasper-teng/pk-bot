@@ -7,12 +7,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))  # should be 839485641339306044
 
-# client = discord.Client()
 bot = commands.Bot(command_prefix='-')
 
 
 @bot.command(hidden=True)
+@commands.has_role(ROLE_ID)
 async def reload(ctx, *args):
     if not args:
         for ext in list(bot.extensions):
