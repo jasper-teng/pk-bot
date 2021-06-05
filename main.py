@@ -21,6 +21,7 @@ async def reload(ctx, *args):
     for arg in args:
         bot.reload_extension(arg)
 
+    print('Reloaded modules.')
     await ctx.message.add_reaction('🆗')
 
 
