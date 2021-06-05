@@ -9,12 +9,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 # client = discord.Client()
-bot = commands.Bot(command_prefix='*')
-
-
-@bot.command()
-async def jcjc(ctx):
-    await ctx.send('lmao')
+bot = commands.Bot(command_prefix='-')
 
 
 @bot.command(hidden=True)
