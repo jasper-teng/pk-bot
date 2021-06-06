@@ -42,6 +42,8 @@ async def search(ctx, *, query):
 
 async def _search(ctx, query, list_all=False):
     query = query.lower()
+    if not query:
+        return
 
     # Search database
     result = collections.defaultdict(list)
