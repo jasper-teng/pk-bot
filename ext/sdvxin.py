@@ -122,8 +122,8 @@ async def send_result(ctx, song_id):
         urls[3] = '/'.join([BASE_DOMAIN, d['version'][1], song_id + EXTRA_DIFF_SUFFIX[d['extra_diff']] + '.htm'])
 
     links = []
-    for dn, url in zip(diff_names, urls):
-        links.append(f'[{dn}]({url})')
+    for dn, lv, url in zip(diff_names, filter(None, d['levels']), urls):
+        links.append(f'[{dn} {lv}]({url})')
 
     embed = Embed(title=d['artist'], description=' - '.join(links))
     embed.set_author(name=f'{d["title"]} ({song_id})')
