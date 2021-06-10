@@ -1,6 +1,7 @@
 import collections
 import json
 import os
+import pprint
 import re
 
 from discord import Embed
@@ -104,10 +105,58 @@ async def listalias(ctx, *, song_id):
     embed = Embed(title=f'Aliases for {song_db[song_id]["title"]} ({song_id}):', description=text)
     embed.set_footer(text='Powered by sdvx.in')
     await ctx.send(embed=embed)
-    
 
-# TODO: admin only command to add alternative spelling
-#       admin only command to edit song metadata
+
+@sdvxin.command(hidden=True)
+@commands.has_role(ROLE_ID)
+async def addalias(ctx, song_id, new_alias):
+    d = song_db[song_id]
+    if not new_alias.isascii():
+        raise ValueError(f'Alias must be ASCII only. (got "{new_alias}")')
+    d['alt_title'].append(new_alias)
+    save_database()
+    print(f'<SDVXIN> Added new alias for ID {song_id}.')
+
+    embed = Embed(title=f'Alias "{new_alias}" added for {d["title"]} ({song_id}).')
+    embed.set_footer(text='Powered by sdvx.in')
+    await ctx.send(embed=embed)
+
+
+@sdvxin.command(hidden=True)
+@commands.has_role(ROLE_ID)
+async def addsong(ctx, song_id, *, json_string):
+    if song_id in song_db:
+        raise ValueError(f'ID already exists.')
+
+    # Data must at least have:
+    # - title
+    # - artist
+    # - levels
+    # Optional:
+    # - alt_title (assumed to be [] if not provided)
+    # - extra_diff (assumed to be 0 if not provided)
+    # - version (will be extracted from song_id if not provided)
+
+    d = json.loads(json_string)
+    if not ('title' in d and 'artist' in d and 'levels' in d):
+        raise IndexError('Song data missing required fields (title, artist, levels).')
+
+    sd = {
+        'title'     : d['title'],
+        'artist'    : d['artist'],
+        'levels'    : d['levels'],
+        'alt_title' : d.get('alt_title', []),
+        'extra_diff': d.get('extra_diff', 0),
+        'version'   : d.get('alt_title', [song_id[:2], ''])
+    }
+
+    song_db[song_id] = sd
+    save_database()
+    print(f'<SDVXIN> Added new song entry with ID {song_id}.')
+
+    embed = Embed(title=f'New song entry added (ID {song_id}).', description=pprint.pformat(sd))
+    embed.set_footer(text='Powered by sdvx.in')
+    await ctx.send(embed=embed)
 
 
 async def send_result(ctx, song_id):
@@ -142,6 +191,11 @@ def get_aliases(song_id):
     if data['title'].isascii():
         strings.append(re.sub('[^a-zA-Z0-9]', ' ', data['title']))
     return [s.lower() for s in strings]
+
+
+def save_database():
+    with open('ext/sdvxin_db.json', 'w') as f:
+        json.dump(song_db, f)
 
 
 with open('ext/sdvxin_db.json', 'r') as f:
