@@ -22,7 +22,7 @@ load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 
 
-@commands.group(invoke_without_command=True)
+@commands.group(invoke_without_command=True, aliases=['sdvx'])
 async def sdvxin(ctx, *args):
     """ SDVX.in related commands """
     if ctx.invoked_subcommand is None:
@@ -155,6 +155,35 @@ async def addsong(ctx, song_id, *, json_string):
     print(f'<SDVXIN> Added new song entry with ID {song_id}.')
 
     embed = Embed(title=f'New song entry added (ID {song_id}).', description=pprint.pformat(sd))
+    embed.set_footer(text='Powered by sdvx.in')
+    await ctx.send(embed=embed)
+
+
+@sdvxin.command(hidden=True)
+@commands.has_role(ROLE_ID)
+async def overridefield(ctx, song_id, *, json_string):
+    if song_id not in song_db:
+        raise ValueError(f'ID does not exist.')
+
+    # Allowed fields:
+    # - title
+    # - artist
+    # - levels
+    # - alt_title (assumed to be [] if not provided)
+    # - extra_diff (assumed to be 0 if not provided)
+    # - version (will be extracted from song_id if not provided)
+    valid_fields = ['title', 'artist', 'levels', 'alt_title', 'extra_diff', 'version']
+
+    d = json.loads(json_string)
+    d = {k: d[k] for k in valid_fields if k in d}
+
+    for k, v in d.items():
+        song_db[song_id][k] = v
+
+    save_database()
+    print(f'<SDVXIN> Overwrote fields {list(d.keys())} in ID {song_id}.')
+
+    embed = Embed(title=f'Overwrote the following fields in ID {song_id}.', description=pprint.pformat(d))
     embed.set_footer(text='Powered by sdvx.in')
     await ctx.send(embed=embed)
 
