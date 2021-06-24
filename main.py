@@ -39,5 +39,6 @@ async def on_ready():
 
 bot.load_extension('ext.mangadex')
 bot.load_extension('ext.sdvxin')
+bot.load_extension('ext.viewer')
 bot.load_extension('ext.miscellaneous')
 bot.run(TOKEN)
