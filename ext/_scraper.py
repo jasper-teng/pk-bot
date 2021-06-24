@@ -36,7 +36,7 @@ def is_sdvx_id(st):
     return True
 
 
-async def update_songs(full_check=False):
+async def update_songs(event_loop, full_check=False):
     try:
         with open(SONG_DB_PATH, 'r', encoding='utf-8') as f:
             music_db = json.load(f)
@@ -49,18 +49,20 @@ async def update_songs(full_check=False):
     new_data = []
 
     # Get number of pages to crawl through
-    soup = fetch_page(None,
-                      'https://p.eagate.573.jp/game/sdvx/vi/music/index.html',
-                      use_post=True,
-                      data={'page': 1})
+    soup = await fetch_page(None,
+                            'https://p.eagate.573.jp/game/sdvx/vi/music/index.html',
+                            event_loop,
+                            use_post=True,
+                            data={'page': 1})
     sel_element = soup.select_one('select#search_page')
     max_page = max([int(e) for e in sel_element.stripped_strings])
 
     for pg in range(1, max_page + 1):
-        soup = fetch_page(None,
-                          'https://p.eagate.573.jp/game/sdvx/vi/music/index.html',
-                          use_post=True,
-                          data={'page': pg})
+        soup = await fetch_page(None,
+                                'https://p.eagate.573.jp/game/sdvx/vi/music/index.html',
+                                event_loop,
+                                use_post=True,
+                                data={'page': pg})
         music_data = soup.select('.music')
 
         song_in_database = False
@@ -127,7 +129,7 @@ async def update_songs(full_check=False):
     return new_data
 
 
-async def update_score(msg, sdvx_ids=None):
+async def update_score(msg, event_loop, sdvx_ids=None):
     # Load config info
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
@@ -149,7 +151,7 @@ async def update_score(msg, sdvx_ids=None):
         d_ids = config['sdvx_ids']
 
     # Get session object
-    session = login_routine(uname, pword)
+    session = await login_routine(uname, pword, event_loop)
 
     try:
         with open(PROFILE_LIST_PATH, 'r') as f:
@@ -173,7 +175,7 @@ async def update_score(msg, sdvx_ids=None):
         await update_message(msg, d_ids, completion_status)
 
         # Get first page
-        soup = fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page=1&sort_id=0&lv=1048575')
+        soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page=1&sort_id=0&lv=1048575')
         try:
             max_page = int(soup.select('.page_num')[-1].string)
         except IndexError:
@@ -193,7 +195,7 @@ async def update_score(msg, sdvx_ids=None):
             player_db = {}
 
         # Get profile data
-        soup = fetch_page(session, f'{K_PROFILEURL}?rival_id={d_id}')
+        soup = await fetch_page(session, f'{K_PROFILEURL}?rival_id={d_id}')
         card_name = list(soup.select_one('#player_name').stripped_strings)[1]
         play_count = soup.select_one('.profile_cnt').string
         skill_level = soup.select_one('.profile_skill')['id']
@@ -214,7 +216,10 @@ async def update_score(msg, sdvx_ids=None):
         # Loop through pages
         scores = {}
         for pg in range(1, max_page + 1):
-            soup = fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page={pg}&sort_id=0&lv=1048575')
+            completion_status[-1] = pg, max_page
+            await update_message(msg, d_ids, completion_status)
+
+            soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page={pg}&sort_id=0&lv=1048575')
             table_rows = soup.select('#pc_table tr')[1:]
 
             for song_rows in zip(*[iter(table_rows)] * 6):
@@ -270,6 +275,8 @@ async def update_score(msg, sdvx_ids=None):
     with safe_open(PROFILE_LIST_PATH, 'w') as f:
         json.dump(sdvx_id_list, f)
 
+    await session.close()
+
 
 async def update_message(msg, id_list, status):
     texts = []
@@ -278,10 +285,12 @@ async def update_message(msg, id_list, status):
             texts.append(sdvx_id)
         elif status[i] is None:
             texts.append(f'{sdvx_id}...')
+        elif isinstance(status[i], tuple):
+            texts.append(f'{sdvx_id}... {status[i][0]}/{status[i][1]}')
         elif status[i]:
             texts.append(f'{sdvx_id}... ⭕')
         elif not status[i]:
             texts.append(f'{sdvx_id}... ❌')
 
-    embed = Embed(title='SDVX score scraper', description=f"```{'\n'.join(texts)}```")
+    embed = Embed(title='SDVX score scraper', description='```' + '\n'.join(texts) + '```')
     await msg.edit(embed=embed)

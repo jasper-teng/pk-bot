@@ -1,6 +1,6 @@
 import os
-import requests
 from contextlib import contextmanager
+from aiohttp import ClientSession, ClientError
 
 from bs4 import BeautifulSoup
 
@@ -24,21 +24,21 @@ def safe_open(fn, *args, **kwargs):
         pass
 
 
-def get_play_count(s: str):
+def get_play_count(s):
     try:
         return int(s)
     except ValueError:
         return None
 
 
-def get_skill_level(s: str):
+def get_skill_level(s):
     try:
         return int(s[6:])
     except ValueError:
         return 12
 
 
-def get_song_lookup_table(song_db: dict) -> dict:
+def get_song_lookup_table(song_db):
     """ Return a reverse lookup table for song name/artist pair. """
     lookup = {}
     for sid, song_data in song_db.items():
@@ -48,44 +48,48 @@ def get_song_lookup_table(song_db: dict) -> dict:
     return lookup
 
 
-def fetch_page(session: [requests.Session, None], url: str, use_post=False, **kwargs) -> BeautifulSoup:
+async def fetch_page(session, url, loop=None, use_post=False, **kwargs):
     """ Fetch a page, using Shift-JIS encoding. """
+    session_was_none = False
     if session is None:
-        session = requests.Session()
+        session_was_none = True
+        session = ClientSession(loop=loop)
 
     exception_happened = True
     while exception_happened:
         try:
             if use_post:
-                r = session.post(url, **kwargs)
+                r = await session.post(url, **kwargs)
             else:
-                r = session.get(url, **kwargs)
-        except requests.exceptions.ConnectionError:
+                r = await session.get(url, **kwargs)
+        except ClientError:
             continue
         else:
             exception_happened = False
-    r.encoding = 'shift-jis'
-    return BeautifulSoup(r.text, 'html5lib')
+    if session_was_none:
+        await session.close()
+
+    return BeautifulSoup(await r.text(encoding='shift-jis'), 'html5lib')
 
 
-def login_routine(user_id: str, user_pw: str) -> requests.Session:
+async def login_routine(user_id, user_pw, loop):
     """ Return session object, logged in using provided credentials. """
-    s = requests.Session()
+    s = ClientSession(loop=loop)
 
     # Get login URL
-    r = s.post(K_LOGIN_PAGE_ENDPOINT,
+    r = await s.post(K_LOGIN_PAGE_ENDPOINT,
                data={
                    'path': '/gate/p/login_complete.html'
                })
-    login_url = r.text
+    login_url = await r.text()
 
     # Get "CSRF Middleware Token"
-    soup = fetch_page(s, login_url)
+    soup = await fetch_page(s, url=login_url)
     csrf_token_element = soup.select_one('section.login input[name=csrfmiddlewaretoken]')
     csrf_token = csrf_token_element['value']
 
     # Send login request
-    r = s.post(K_LOGIN_ENDPOINT,
+    r = await s.post(K_LOGIN_ENDPOINT,
            data={
                'userId': user_id,
                'password': user_pw,
