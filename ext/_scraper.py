@@ -130,6 +130,7 @@ async def update_score(msg, sdvx_ids=None):
     pword = config['password']
 
     if sdvx_ids:
+        sdvx_ids = [s.upper() for s in sdvx_ids]
         d_ids = [s for s in sdvx_ids if is_sdvx_id(s)]
         if d_ids:
             config['sdvx_ids'].extend(d_ids)
