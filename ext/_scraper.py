@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import time
 
@@ -15,6 +16,10 @@ from ext._scraperutils import (
 K_PROFILEURL = 'https://p.eagate.573.jp/game/sdvx/vi/playdata/rival/profile.html'
 K_SCOREURL = 'https://p.eagate.573.jp/game/sdvx/vi/playdata/rival/score.html'
 CLEAR_MARK_TABLE = {'play': 0, 'comp': 1, 'comp_ex': 2, 'uc': 3, 'per': 4}
+REL_PATH = os.path.join('..', 'sdvx-score-viewer')
+SONG_DB_PATH = os.path.join(REL_PATH, 'song_db.json')
+CONFIG_PATH = os.path.join(REL_PATH, 'config.json')
+PROFILE_LIST_PATH = os.path.join(REL_PATH, 'scores', 'profile_list.json')
 
 
 def is_sdvx_id(st):
@@ -33,7 +38,7 @@ def is_sdvx_id(st):
 
 async def update_songs(full_check=False):
     try:
-        with open('song_db.json', 'r', encoding='utf-8') as f:
+        with open(SONG_DB_PATH, 'r', encoding='utf-8') as f:
             music_db = json.load(f)
     except json.JSONDecodeError:
         print('<Scraper> Database cannot be read. Overwriting.')
@@ -115,7 +120,7 @@ async def update_songs(full_check=False):
 
         music_db[song_id] = song_data
 
-    with safe_open('song_db.json', 'w', encoding='utf-8') as f:
+    with safe_open(SONG_DB_PATH, 'w', encoding='utf-8') as f:
         json.dump(music_db, f)
 
     print(f'<Scraper> Written {len(new_data)} new entry(s) to database.')
@@ -124,7 +129,7 @@ async def update_songs(full_check=False):
 
 async def update_score(msg, sdvx_ids=None):
     # Load config info
-    with open('config.json', 'r') as f:
+    with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
     uname = config['username']
     pword = config['password']
@@ -136,7 +141,7 @@ async def update_score(msg, sdvx_ids=None):
             config['sdvx_ids'].extend(d_ids)
             config['sdvx_ids'] = list(set(config['sdvx_ids']))
 
-            with open('config.json', 'w') as f:
+            with open(CONFIG_PATH, 'w') as f:
                 json.dump(config, f)
         else:
             d_ids = config['sdvx_ids']
@@ -147,7 +152,7 @@ async def update_score(msg, sdvx_ids=None):
     session = login_routine(uname, pword)
 
     try:
-        with open('scores/profile_list.json', 'r') as f:
+        with open(PROFILE_LIST_PATH, 'r') as f:
             sdvx_id_list = json.load(f)
     except json.JSONDecodeError:
         print('<Scraper> Database cannot be read. Overwriting.')
@@ -157,7 +162,7 @@ async def update_score(msg, sdvx_ids=None):
         sdvx_id_list = []
 
     # Load song database
-    with open('song_db.json', 'r', encoding='utf-8') as f:
+    with open(SONG_DB_PATH, 'r', encoding='utf-8') as f:
         song_db = json.load(f)
     id_lookup = get_song_lookup_table(song_db)
 
@@ -178,7 +183,7 @@ async def update_score(msg, sdvx_ids=None):
 
         # Load/initialize score database
         try:
-            with open(f'scores/{d_id}.json', 'r') as f:
+            with open(os.path.join(REL_PATH, 'scores', f'{d_id}.json'), 'r') as f:
                 player_db = json.load(f)
         except json.JSONDecodeError:
             print(f'<Scraper> Database cannot be read. Overwriting {d_id}.json.')
@@ -249,7 +254,7 @@ async def update_score(msg, sdvx_ids=None):
 
         # Save data
         if new_entries:
-            with safe_open(f'scores/{d_id}.json', 'w', encoding='utf-8') as f:
+            with safe_open(os.path.join(REL_PATH, 'scores', f'{d_id}.json'), 'w', encoding='utf-8') as f:
                 json.dump(player_db, f)
             if d_id not in sdvx_id_list:
                 sdvx_id_list.append(d_id)
@@ -262,7 +267,7 @@ async def update_score(msg, sdvx_ids=None):
     await update_message(msg, d_ids, completion_status)
 
     sdvx_id_list.sort()
-    with safe_open('scores/profile_list.json', 'w') as f:
+    with safe_open(PROFILE_LIST_PATH, 'w') as f:
         json.dump(sdvx_id_list, f)
 
 

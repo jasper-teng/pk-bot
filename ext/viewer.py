@@ -11,6 +11,8 @@ IS_PROCESSING = False
 
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
+VIEWER_DIR = os.path.join('..', 'sdvx-score-viewer')
+DEVNULL = subprocess.DEVNULL
 
 # TODO: use async requests, fix relative paths
 
@@ -27,7 +29,7 @@ async def viewer(ctx):
 
 
 @viewer.command()
-async def updatescore(ctx, *sdvx_ids):
+async def scoreupdate(ctx, *sdvx_ids):
     """ Updates the scores in the viewer """
     IS_PROCESSING = True
 
@@ -38,24 +40,22 @@ async def updatescore(ctx, *sdvx_ids):
     embed = Embed(title='SDVX score scraper', description=f'Automated score update initiated at {time_str}.')
     message = await ctx.send(embed=embed)
 
-    os.chdir(os.path.join('..', 'sdvx-score-viewer'))
     await update_score(message, sdvx_ids)
 
-    subprocess.call('git add scores/.', stdout=subprocess.DEVNULL)
-    subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=subprocess.DEVNULL)
-    subprocess.call('git push --porcelain', stdout=subprocess.DEVNULL)
+    subprocess.call('git add scores/.', stdout=DEVNULL, cwd=VIEWER_DIR)
+    subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
+    subprocess.call('git push --porcelain', stdout=DEVNULL, cwd=VIEWER_DIR)
 
     embed = Embed(title='SDVX score scraper', description='Automated score update finished.')
     await ctx.send(embed=embed)
     await message.delete(delay=10)
 
-    os.chdir(os.path.join('..', 'pk-bot'))
     IS_PROCESSING = False
 
 
 @viewer.command()
 @commands.has_role(ROLE_ID)
-async def updatesongs(ctx, is_full_update=False):
+async def songupdate(ctx, is_full_update=False):
     """ Updates the song database in the viewer """
     IS_PROCESSING = True
 
@@ -66,19 +66,21 @@ async def updatesongs(ctx, is_full_update=False):
     embed = Embed(title='SDVX score scraper', description=f'Automated song database update initiated at {time_str}.')
     message = await ctx.send(embed=embed)
 
-    os.chdir(os.path.join('..', 'sdvx-score-viewer'))
     new_songs = await update_songs(is_full_update)
 
-    subprocess.call(f'git commit song_db.json -m "automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=subprocess.DEVNULL)
-    subprocess.call('git push --porcelain', stdout=subprocess.DEVNULL)
+    subprocess.call(f'git commit song_db.json -m "automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
+    subprocess.call('git push --porcelain', stdout=DEVNULL, cwd=VIEWER_DIR)
 
-    desc = ['Automated song database update finished. Added the following songs:']
+    if new_songs:
+        desc = ['Automated song database update finished. Added the following songs:']
+    else:
+        desc = ['Automated song database update finished. No new songs added.']
+
     for song_data in new_songs:
         desc.append(f'- {song_data["song_name"]} / {song_data["song_artist"]}')
     embed = Embed(title='SDVX score scraper', description='\n'.join(desc))
     await message.edit(embed=embed)
 
-    os.chdir(os.path.join('..', 'pk-bot'))
     IS_PROCESSING = False
 
 
