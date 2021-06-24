@@ -43,7 +43,7 @@ async def updatescore(ctx, *sdvx_ids):
 
     subprocess.call('git add scores/.', stdout=subprocess.DEVNULL)
     subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=subprocess.DEVNULL)
-    subprocess.call('git push', stdout=subprocess.DEVNULL)
+    subprocess.call('git push --porcelain', stdout=subprocess.DEVNULL)
 
     embed = Embed(title='SDVX score scraper', description='Automated score update finished.')
     await ctx.send(embed=embed)
@@ -70,7 +70,7 @@ async def updatesongs(ctx, is_full_update=False):
     new_songs = await update_songs(is_full_update)
 
     subprocess.call(f'git commit song_db.json -m "automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=subprocess.DEVNULL)
-    subprocess.call('git push', stdout=subprocess.DEVNULL)
+    subprocess.call('git push --porcelain', stdout=subprocess.DEVNULL)
 
     desc = ['Automated song database update finished. Added the following songs:']
     for song_data in new_songs:
