@@ -1,6 +1,7 @@
 # bot.py
-import os
 import discord
+import os
+import traceback
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -28,8 +29,9 @@ async def reload(ctx, *args):
 @bot.listen('on_command_error')
 async def error_handler(ctx, err):
     if not isinstance(err, commands.CommandNotFound):
+        tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=5))
         await ctx.message.add_reaction('⛔')
-        await ctx.send(f'{type(err).__name__}: {err}', delete_after=10)
+        await ctx.send(f'{type(err).__name__}: {err}\nTraceback: ```{tb}```', delete_after=10)
 
 
 @bot.event
