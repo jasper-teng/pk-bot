@@ -277,5 +277,5 @@ async def update_message(msg, id_list, status):
         elif not status[i]:
             texts.append(f'{sdvx_id}... ❌')
 
-    embed = Embed(title='SDVX score scraper', description='\n'.join(texts))
+    embed = Embed(title='SDVX score scraper', description=f"```{'\n'.join(texts)}```")
     await msg.edit(embed=embed)
