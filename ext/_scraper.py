@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import sys
@@ -168,10 +169,10 @@ async def update_score(msg, event_loop, sdvx_ids=None):
         song_db = json.load(f)
     id_lookup = get_song_lookup_table(song_db)
 
-    completion_status = []
+    completion_status = {}
 
-    for d_id in d_ids:
-        completion_status.append(None)
+    async def coroutine(d_id):
+        completion_status[d_id] = None
         await update_message(msg, d_ids, completion_status)
 
         # Get first page
@@ -180,8 +181,8 @@ async def update_score(msg, event_loop, sdvx_ids=None):
             max_page = int(soup.select('.page_num')[-1].string)
         except IndexError:
             print(f'<Scraper> Couldn\'t scrape ID {d_id}. Scores may not be public, or profile does not exist.')
-            completion_status[-1] = False
-            continue
+            completion_status[d_id] = False
+            return
 
         # Load/initialize score database
         try:
@@ -216,7 +217,7 @@ async def update_score(msg, event_loop, sdvx_ids=None):
         # Loop through pages
         scores = {}
         for pg in range(1, max_page + 1):
-            completion_status[-1] = pg, max_page
+            completion_status[d_id] = pg, max_page
             await update_message(msg, d_ids, completion_status)
 
             soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page={pg}&sort_id=0&lv=1048575')
@@ -267,7 +268,10 @@ async def update_score(msg, event_loop, sdvx_ids=None):
             print(f'<Scraper> {new_entries} new entry(s) saved to {d_id}.json.')
         else:
             print(f'<Scraper> No new entries found for {d_id}.')
-        completion_status[-1] = True
+        completion_status[d_id] = True
+
+    coros = [coroutine(sdvx_id) for sdvx_id in d_ids]
+    await asyncio.gather(*coros)
 
     await update_message(msg, d_ids, completion_status)
 
@@ -280,16 +284,16 @@ async def update_score(msg, event_loop, sdvx_ids=None):
 
 async def update_message(msg, id_list, status):
     texts = []
-    for i, sdvx_id in enumerate(id_list):
-        if i >= len(status):
+    for sdvx_id in sorted(id_list):
+        if sdvx_id not in status:
             texts.append(sdvx_id)
-        elif status[i] is None:
+        elif status[sdvx_id] is None:
             texts.append(f'{sdvx_id}...')
-        elif isinstance(status[i], tuple):
-            texts.append(f'{sdvx_id}... {status[i][0]}/{status[i][1]}')
-        elif status[i]:
+        elif isinstance(status[sdvx_id], tuple):
+            texts.append(f'{sdvx_id}... {status[sdvx_id][0]}/{status[sdvx_id][1]}')
+        elif status[sdvx_id]:
             texts.append(f'{sdvx_id}... ⭕')
-        elif not status[i]:
+        elif not status[sdvx_id]:
             texts.append(f'{sdvx_id}... ❌')
 
     embed = Embed(title='SDVX score scraper', description='```' + '\n'.join(texts) + '```')
