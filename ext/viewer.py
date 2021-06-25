@@ -15,6 +15,8 @@ VIEWER_DIR = os.path.join('..', 'sdvx-score-viewer')
 DEVNULL = subprocess.DEVNULL
 EVENT_LOOP = None
 
+# TODO: handle scrape failures more gracefully
+
 
 @commands.group()
 async def viewer(ctx):
@@ -30,6 +32,7 @@ async def scoreupdate(ctx, *sdvx_ids):
 
     if IS_PROCESSING:
         await ctx.message.add_reaction('⛔')
+        await ctx.send('Please wait until the currently running process finishes.', delete_after=10)
         return
     IS_PROCESSING = True
 
@@ -40,7 +43,11 @@ async def scoreupdate(ctx, *sdvx_ids):
     embed = Embed(title='SDVX score scraper', description=f'Automated score update initiated at {time_str}.')
     message = await ctx.send(embed=embed)
 
-    await update_score(message, EVENT_LOOP, sdvx_ids)
+    try:
+        await update_score(message, EVENT_LOOP, sdvx_ids)
+    except Exception as e:
+        IS_PROCESSING = False
+        raise e
 
     subprocess.call('git add scores/.', stdout=DEVNULL, cwd=VIEWER_DIR)
     subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
@@ -61,6 +68,7 @@ async def songupdate(ctx, is_full_update=False):
 
     if IS_PROCESSING:
         await ctx.message.add_reaction('⛔')
+        await ctx.send('Please wait until the currently running process finishes.', delete_after=10)
         return
     IS_PROCESSING = True
 
@@ -71,7 +79,11 @@ async def songupdate(ctx, is_full_update=False):
     embed = Embed(title='SDVX score scraper', description=f'Automated song database update initiated at {time_str}.')
     message = await ctx.send(embed=embed)
 
-    new_songs = await update_songs(EVENT_LOOP, is_full_update)
+    try:
+        new_songs = await update_songs(EVENT_LOOP, is_full_update)
+    except Exception as e:
+        IS_PROCESSING = False
+        raise e
 
     subprocess.call(f'git commit song_db.json -m "automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
     subprocess.call('git push --porcelain', stdout=DEVNULL, cwd=VIEWER_DIR)
