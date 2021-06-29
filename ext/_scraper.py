@@ -24,17 +24,24 @@ PROFILE_LIST_PATH = os.path.join(REL_PATH, 'scores', 'profile_list.json')
 
 
 def is_sdvx_id(st):
-    if len(st) != 12:
+    if len(st) == 8:
+        try:
+            _ = st
+            st = f'SV-{st[:4]}-{st[4:]}'
+        except ValueError:
+            return False
+    elif len(st) == 12:
+        if st[:3] != 'SV-':
+            return False
+        if st[7] != '-':
+            return False
+        try:
+            _ = int(st[3:7]) + int(st[8:])
+        except ValueError:
+            return False
+    else:
         return False
-    if st[:3] != 'SV-':
-        return False
-    if st[7] != '-':
-        return False
-    try:
-        _ = int(st[3:7]) + int(st[8:])
-    except ValueError:
-        return False
-    return True
+    return st
 
 
 async def update_songs(event_loop, full_check=False):
@@ -139,7 +146,7 @@ async def update_score(msg, event_loop, sdvx_ids=None):
 
     if sdvx_ids:
         sdvx_ids = [s.upper() for s in sdvx_ids]
-        d_ids = [s for s in sdvx_ids if is_sdvx_id(s)]
+        d_ids = [is_sdvx_id(s) for s in sdvx_ids if is_sdvx_id(s)]
         if d_ids:
             config['sdvx_ids'].extend(d_ids)
             config['sdvx_ids'] = list(set(config['sdvx_ids']))
