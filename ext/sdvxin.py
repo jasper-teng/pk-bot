@@ -31,13 +31,13 @@ async def sdvxin(ctx, *args):
 
 @sdvxin.command(hidden=True)
 async def fullsearch(ctx, *, query):
-    """ Searches for a SDVX song title, no limit on multiple results """
+    """ Searches for a SDVX song title, no limit on multiple results. """
     await _search(ctx, query, True)
 
 
 @sdvxin.command()
 async def search(ctx, *, query):
-    """ Searches for a SDVX song title """
+    """ Searches for a SDVX song title. """
     await _search(ctx, query)
 
 
