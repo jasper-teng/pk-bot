@@ -4,11 +4,13 @@ from discord.ext import commands
 
 @commands.command()
 async def notthemxm(ctx):
+    """ Holy shit nice score-- """
     await ctx.send(file=File('ext/notthemxm.png'))
 
 
 @commands.command()
 async def sweetland(ctx):
+    """ ♫♫♩～ """
     await ctx.send('https://www.youtube.com/watch?v=ws4vY996y8M')
 
 
