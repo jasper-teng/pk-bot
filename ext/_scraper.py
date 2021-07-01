@@ -16,6 +16,7 @@ from ext._scraperutils import (
 
 K_PROFILEURL = 'https://p.eagate.573.jp/game/sdvx/vi/playdata/rival/profile.html'
 K_SCOREURL = 'https://p.eagate.573.jp/game/sdvx/vi/playdata/rival/score.html'
+K_MUSICURL = 'https://p.eagate.573.jp/game/sdvx/vi/music/index.html'
 CLEAR_MARK_TABLE = {'play': 0, 'comp': 1, 'comp_ex': 2, 'uc': 3, 'per': 4}
 REL_PATH = os.path.join('..', 'sdvx-score-viewer')
 SONG_DB_PATH = os.path.join(REL_PATH, 'song_db.json')
@@ -44,7 +45,7 @@ def is_sdvx_id(st):
     return st
 
 
-async def update_songs(event_loop, full_check=False):
+async def update_songs(full_check=False):
     try:
         with open(SONG_DB_PATH, 'r', encoding='utf-8') as f:
             music_db = json.load(f)
@@ -58,8 +59,7 @@ async def update_songs(event_loop, full_check=False):
 
     # Get number of pages to crawl through
     soup = await fetch_page(None,
-                            'https://p.eagate.573.jp/game/sdvx/vi/music/index.html',
-                            event_loop,
+                            K_MUSICURL,
                             use_post=True,
                             data={'page': 1})
     sel_element = soup.select_one('select#search_page')
@@ -67,8 +67,7 @@ async def update_songs(event_loop, full_check=False):
 
     for pg in range(1, max_page + 1):
         soup = await fetch_page(None,
-                                'https://p.eagate.573.jp/game/sdvx/vi/music/index.html',
-                                event_loop,
+                                K_MUSICURL,
                                 use_post=True,
                                 data={'page': pg})
         music_data = soup.select('.music')
@@ -137,7 +136,7 @@ async def update_songs(event_loop, full_check=False):
     return new_data
 
 
-async def update_score(msg, event_loop, sdvx_ids=None):
+async def update_score(msg, sdvx_ids=None):
     # Load config info
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
@@ -159,7 +158,7 @@ async def update_score(msg, event_loop, sdvx_ids=None):
         d_ids = config['sdvx_ids']
 
     # Get session object
-    session = await login_routine(uname, pword, event_loop)
+    session = await login_routine(uname, pword)
 
     try:
         with open(PROFILE_LIST_PATH, 'r') as f:
@@ -232,7 +231,10 @@ async def update_score(msg, event_loop, sdvx_ids=None):
 
             for song_rows in zip(*[iter(table_rows)] * 6):
                 [song_name, song_artist] = list(song_rows[0].stripped_strings)
-                song_id = id_lookup[song_name, song_artist]
+                try:
+                    song_id = id_lookup[song_name, song_artist]
+                except IndexError:
+                    continue
 
                 for diff, row in enumerate(song_rows[1:]):
                     score_node = row.select_one('#score_col_3') or row.select_one('#score_col_4')
