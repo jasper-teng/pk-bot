@@ -48,12 +48,12 @@ def get_song_lookup_table(song_db):
     return lookup
 
 
-async def fetch_page(session, url, loop=None, use_post=False, **kwargs):
+async def fetch_page(session, url, use_post=False, **kwargs):
     """ Fetch a page, using Shift-JIS encoding. """
     session_was_none = False
     if session is None:
         session_was_none = True
-        session = ClientSession(loop=loop)
+        session = ClientSession()
 
     exception_happened = True
     while exception_happened:
@@ -66,21 +66,23 @@ async def fetch_page(session, url, loop=None, use_post=False, **kwargs):
             continue
         else:
             exception_happened = False
+    return_val = BeautifulSoup(await r.text(encoding='shift-jis'), 'html5lib')
+
     if session_was_none:
         await session.close()
 
-    return BeautifulSoup(await r.text(encoding='shift-jis'), 'html5lib')
+    return return_val
 
 
-async def login_routine(user_id, user_pw, loop):
+async def login_routine(user_id, user_pw):
     """ Return session object, logged in using provided credentials. """
-    s = ClientSession(loop=loop)
+    s = ClientSession()
 
     # Get login URL
     r = await s.post(K_LOGIN_PAGE_ENDPOINT,
-               data={
-                   'path': '/gate/p/login_complete.html'
-               })
+                     data={
+                         'path': '/gate/p/login_complete.html'
+                     })
     login_url = await r.text()
 
     # Get "CSRF Middleware Token"
@@ -90,11 +92,11 @@ async def login_routine(user_id, user_pw, loop):
 
     # Send login request
     r = await s.post(K_LOGIN_ENDPOINT,
-           data={
-               'userId': user_id,
-               'password': user_pw,
-               'csrfmiddlewaretoken': csrf_token
-           })
+                     data={
+                         'userId': user_id,
+                         'password': user_pw,
+                         'csrfmiddlewaretoken': csrf_token
+                     })
 
     return s
 
