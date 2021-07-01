@@ -21,7 +21,6 @@ load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 VIEWER_DIR = os.path.join('..', 'sdvx-score-viewer')
 DEVNULL = subprocess.DEVNULL
-EVENT_LOOP = None
 
 # TODO: handle scrape failures more gracefully
 
@@ -60,7 +59,7 @@ async def scoreupdate(ctx, *sdvx_ids):
     message = await ctx.send(embed=embed)
 
     try:
-        await update_score(message, EVENT_LOOP, sdvx_ids)
+        await update_score(message, sdvx_ids)
     except Exception as e:
         IS_PROCESSING = 0
         SCORE_QUEUED.set()
@@ -98,13 +97,13 @@ async def songupdate(ctx, is_full_update=False):
     message = await ctx.send(embed=embed)
 
     try:
-        new_songs = await update_songs(EVENT_LOOP, is_full_update)
+        new_songs = await update_songs(is_full_update)
     except Exception as e:
         IS_PROCESSING = 0
         raise e
 
     subprocess.call(f'git commit song_db.json -m "automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
-    subprocess.call('git push --porcelain', stdout=DEVNULL, stderrt=DEVNULL, cwd=VIEWER_DIR)
+    subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=VIEWER_DIR)
 
     if new_songs:
         desc = ['Automated song database update finished. Added the following songs:']
@@ -121,4 +120,3 @@ async def songupdate(ctx, is_full_update=False):
 
 def setup(bot):
     bot.add_command(viewer)
-    EVENT_LOOP = bot.loop
