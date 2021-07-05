@@ -22,8 +22,6 @@ ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 VIEWER_DIR = os.path.join('..', 'sdvx-score-viewer')
 DEVNULL = subprocess.DEVNULL
 
-# TODO: handle scrape failures more gracefully
-
 
 @commands.group()
 async def viewer(ctx):
