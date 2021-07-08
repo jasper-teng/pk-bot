@@ -1,9 +1,11 @@
-import asyncio
+import collections
 import random
-from discord import File, FFmpegOpusAudio, DeletedReferencedMessage
+import time
+from discord import File, DeletedReferencedMessage
 from discord.ext import commands
 
-VOICE_CLIENT = None
+BREAD_COUNTER = [0, 0, 0]
+LAST_REFRESH = None
 
 
 @commands.command()
@@ -15,11 +17,50 @@ async def notthemxm(ctx):
 @commands.command()
 async def bread(ctx):
     """ bread craftsingle banana craftsingle """
-    if random.random() < 0.1:
-        await ctx.send(file=File('ext/bread2.png'))
+    global LAST_REFRESH, BREAD_COUNTER
+    current_time = time.strftime('%Y%m%d')
+    if LAST_REFRESH is None or current_time > LAST_REFRESH:
+        LAST_REFRESH = current_time
+        BREAD_COUNTER = [0, 0, 0]
+
+    BREAD_COUNTER[0] += 1
+    if random.random() < 0.01:
+        BREAD_COUNTER[2] += 1
+        await ctx.reply(file=File('ext/bread3.png'))
+        with open('ext/ssr_pulls.txt', 'a') as f:
+            f.write(f'{ctx.author.id}\n')
+    elif random.random() < 0.1:
+        BREAD_COUNTER[1] += 1
+        await ctx.reply(file=File('ext/bread2.png'))
     else:
-        await ctx.send(file=File('ext/bread.png'))
-        await ctx.send('bread craftsingle banana craftsingle')
+        await ctx.reply('bread craftsingle banana craftsingle', file=File('ext/bread.png'))
+
+
+@commands.command()
+async def breadstats(ctx):
+    """ did you just pull 2 jaspers in a row?? """
+    global BREAD_COUNTER
+    with open('ext/ssr_pulls.txt', 'r') as f:
+        member_list = list(f)
+    texts = [
+        f'-bread has been used {BREAD_COUNTER[0]} times today'
+    ]
+    if BREAD_COUNTER[0] > 0:
+        texts.append(f'out of those, {BREAD_COUNTER[1]} ({BREAD_COUNTER[1]/BREAD_COUNTER[0]*100:.2f}%) of them were jasper')
+        texts.append(f'and {BREAD_COUNTER[2]} ({BREAD_COUNTER[2]/BREAD_COUNTER[0]*100:.2f}%) of them were SSR jasper')
+    if member_list:
+        texts.append(f'')
+        texts.append(f'Top pullers:')
+        place = 1
+        for whoid, count in collections.Counter(member_list).most_common():
+            user = ctx.guild.get_member(int(whoid.strip()))
+            if user is not None:
+                if count > 1:
+                    texts.append(f'{place}. {user.nick} ({count} times)')
+                else:
+                    texts.append(f'{place}. {user.nick} ({count} time)')
+                place += 1
+    await ctx.reply('\n'.join(texts))
 
 
 @commands.command()
@@ -32,77 +73,8 @@ async def ligma(ctx):
         await msg.reference.resolved.reply(file=File('ext/ligma.jpg'))
 
 
-@commands.group(invoke_without_command=True, aliases=['sweetsland'])
-async def sweetland(ctx):
-    """ ♫♫♩～ """
-    if ctx.invoked_subcommand is None:
-        await ctx.send('https://www.youtube.com/watch?v=ws4vY996y8M')
-
-
-@sweetland.command()
-async def play(ctx, channel_num=None):
-    """
-    Play music in a voice channel.
-    
-    If channel number isn't given, defaults to the user's voice channel.
-    If user isn't in a voice channel, defaults to the first voice channel that is occupied.
-    """
-    global VOICE_CLIENT
-    if VOICE_CLIENT is not None:
-        ctx.reply('Stop current playback first before starting it again!', delete_after=10)
-        return
-
-    # Select channel
-    target_channel = None
-    if channel_num is None:
-        author = ctx.author
-        if author.voice and author.voice.channel is not None:
-            target_channel = author.voice.channel
-        else:
-            for channel in ctx.guild.voice_channels:
-                if channel.members:
-                    target_channel = channel
-                    break
-            await ctx.reply('No voice channel available to bind to!')
-    else:
-        target_channel = ctx.guild.voice_channels[int(channel_num) - 1]
-    audio = FFmpegOpusAudio('ext/sweetland.mp3')
-    await ctx.message.add_reaction('🆗')
-
-    stop_event = asyncio.Event()
-    loop = asyncio.get_event_loop()
-    def after(err):
-        if err:
-            raise err
-        def clear():
-            stop_event.set()
-        loop.call_soon_threadsafe(clear)
-
-    client = await target_channel.connect()
-    VOICE_CLIENT = client
-    client.play(audio, after=after)
-
-    await stop_event.wait()
-    await client.disconnect()
-    VOICE_CLIENT = None
-
-
-@sweetland.command()
-async def stop(ctx):
-    global VOICE_CLIENT
-    if VOICE_CLIENT is None:
-        return
-
-    client = VOICE_CLIENT
-    VOICE_CLIENT = None
-
-    client.stop()
-    await client.disconnect()
-    await ctx.message.add_reaction('🆗')
-
-
 def setup(bot):
     bot.add_command(notthemxm)
     bot.add_command(bread)
+    bot.add_command(breadstats)
     bot.add_command(ligma)
-    bot.add_command(sweetland)
