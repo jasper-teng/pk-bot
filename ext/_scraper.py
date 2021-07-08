@@ -27,8 +27,7 @@ PROFILE_LIST_PATH = os.path.join(REL_PATH, 'scores', 'profile_list.json')
 def is_sdvx_id(st):
     if len(st) == 8:
         try:
-            _ = st
-            st = f'SV-{st[:4]}-{st[4:]}'
+            retval = f'SV-{st[:4]}-{st[4:]}'
         except ValueError:
             return False
     elif len(st) == 12:
@@ -37,6 +36,7 @@ def is_sdvx_id(st):
         if st[7] != '-':
             return False
         try:
+            retval = st
             _ = int(st[3:7]) + int(st[8:])
         except ValueError:
             return False
@@ -176,6 +176,7 @@ async def update_score(msg, sdvx_ids=None):
     id_lookup = get_song_lookup_table(song_db)
 
     completion_status = {}
+    unsaved_songs = set()
 
     async def coroutine(d_id):
         completion_status[d_id] = None
@@ -233,7 +234,8 @@ async def update_score(msg, sdvx_ids=None):
                 [song_name, song_artist] = list(song_rows[0].stripped_strings)
                 try:
                     song_id = id_lookup[song_name, song_artist]
-                except IndexError:
+                except KeyError:
+                    unsaved_songs.add((song_name, song_artist))
                     continue
 
                 for diff, row in enumerate(song_rows[1:]):
@@ -282,7 +284,7 @@ async def update_score(msg, sdvx_ids=None):
     coros = [coroutine(sdvx_id) for sdvx_id in d_ids]
     await asyncio.gather(*coros)
 
-    await update_message(msg, d_ids, completion_status)
+    await update_message(msg, d_ids, completion_status, unsaved_songs)
 
     sdvx_id_list.sort()
     with safe_open(PROFILE_LIST_PATH, 'w') as f:
@@ -291,7 +293,7 @@ async def update_score(msg, sdvx_ids=None):
     await session.close()
 
 
-async def update_message(msg, id_list, status):
+async def update_message(msg, id_list, status, skipped_songs=None):
     texts = []
     for sdvx_id in sorted(id_list):
         if sdvx_id not in status:
@@ -304,6 +306,12 @@ async def update_message(msg, id_list, status):
             texts.append(f'{sdvx_id}... ⭕')
         elif not status[sdvx_id]:
             texts.append(f'{sdvx_id}... ❌')
+    desc = '```' + '\n'.join(texts) + '```'
 
-    embed = Embed(title='SDVX score scraper', description='```' + '\n'.join(texts) + '```')
+    if skipped_songs is not None:
+        desc += '\n' + 'While scraping data, the following song(s) are missing from the database:'
+        for sn, sa in skipped_songs:
+            desc += f'\n- {sn} / {sa}'
+
+    embed = Embed(title='SDVX score scraper', description=desc)
     await msg.edit(embed=embed)
