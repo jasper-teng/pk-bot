@@ -10,7 +10,9 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))  # should be 839485641339306044
 
-bot = commands.Bot(command_prefix='-')
+intents = discord.Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix='-', intents=intents)
 
 
 @bot.command(hidden=True)
@@ -43,4 +45,5 @@ bot.load_extension('ext.mangadex')
 bot.load_extension('ext.sdvxin')
 bot.load_extension('ext.viewer')
 bot.load_extension('ext.miscellaneous')
+bot.load_extension('ext.sweetland')
 bot.run(TOKEN)
