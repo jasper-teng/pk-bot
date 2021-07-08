@@ -197,7 +197,7 @@ async def send_result(ctx, song_id):
 
     if d['levels'][3] != 0:
         diff_names[3] = EXTRA_DIFF_NAMES[d['extra_diff']]
-        urls[3] = '/'.join([BASE_DOMAIN, d['version'][1], song_id + EXTRA_DIFF_SUFFIX[d['extra_diff']] + '.htm'])
+        urls[3] = '/'.join([BASE_DOMAIN, d['version'][1] or d['version'][0], song_id + EXTRA_DIFF_SUFFIX[d['extra_diff']] + '.htm'])
 
     links = []
     for dn, lv, url in zip(diff_names, filter(None, d['levels']), urls):
