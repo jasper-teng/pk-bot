@@ -2,11 +2,11 @@ import asyncio
 import os
 import subprocess
 import time
+import ext._scraper as scraper
 
 from discord import Embed
 from discord.ext import commands
 from dotenv import load_dotenv
-from ext._scraper import update_score, update_songs
 
 # Global state
 IS_PROCESSING = 0
@@ -57,7 +57,7 @@ async def scoreupdate(ctx, *sdvx_ids):
     message = await ctx.send(embed=embed)
 
     try:
-        await update_score(message, sdvx_ids)
+        skipped_songs = await scraper.update_score(message, sdvx_ids)
     except Exception as e:
         IS_PROCESSING = 0
         SCORE_QUEUED.set()
@@ -67,7 +67,13 @@ async def scoreupdate(ctx, *sdvx_ids):
     subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
     subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=VIEWER_DIR)
 
-    embed = Embed(title='SDVX score scraper', description='Automated score update finished.')
+    desc = 'Automated score update finished.'
+    if len(skipped_songs) > 0:
+        desc += '\n\n' + 'While scraping data, the following song(s) are missing from the database:'
+        for sn, sa in skipped_songs:
+            desc += f'\n- {sn} / {sa}'
+
+    embed = Embed(title='SDVX score scraper', description=desc)
     await ctx.reply(embed=embed)
     await message.delete(delay=10)
 
@@ -95,7 +101,7 @@ async def songupdate(ctx, is_full_update=False):
     message = await ctx.send(embed=embed)
 
     try:
-        new_songs = await update_songs(is_full_update)
+        new_songs = await scraper.update_songs(is_full_update)
     except Exception as e:
         IS_PROCESSING = 0
         raise e
