@@ -3,15 +3,48 @@ import random
 import time
 from discord import File, DeletedReferencedMessage
 from discord.ext import commands
+from discord.utils import escape_markdown
 
 BREAD_COUNTER = [0, 0, 0]
 LAST_REFRESH = None
 
 
+async def send_image(ctx, img_path):
+    msg = ctx.message
+    if msg.reference is None or isinstance(msg.reference.resolved, DeletedReferencedMessage):
+        await ctx.send(file=File(img_path))
+    else:
+        await msg.reference.resolved.reply(file=File(img_path))
+
+
 @commands.command()
 async def notthemxm(ctx):
     """ Holy shit nice score-- """
-    await ctx.send(file=File('ext/notthemxm.png'))
+    await send_image(ctx, 'ext/notthemxm.png')
+
+
+@commands.command()
+async def ligma(ctx):
+    """ Who the hell is Steve Jobs?! """
+    await send_image(ctx, 'ext/ligma.jpg')
+
+
+@commands.command()
+async def imperial(ctx):
+    """ im the worst new imperial """
+    await send_image(ctx, 'ext/imperial.png')
+
+
+@commands.command()
+async def gaming(ctx):
+    """ now that's what I call gaming """
+    await send_image(ctx, 'ext/gaming.jpg')
+
+
+@commands.command()
+async def jasper(ctx):
+    """ im allergic to jasper's shit """
+    await send_image(ctx, 'ext/jasper.png')
 
 
 @commands.command()
@@ -48,33 +81,27 @@ async def breadstats(ctx):
     if BREAD_COUNTER[0] > 0:
         texts.append(f'out of those, {BREAD_COUNTER[1]} ({BREAD_COUNTER[1]/BREAD_COUNTER[0]*100:.2f}%) of them were jasper')
         texts.append(f'and {BREAD_COUNTER[2]} ({BREAD_COUNTER[2]/BREAD_COUNTER[0]*100:.2f}%) of them were SSR jasper')
+    await ctx.reply('\n'.join(texts))
+
     if member_list:
-        texts.append(f'')
-        texts.append(f'Top pullers:')
+        texts = ['Top pullers:']
         place = 1
         for whoid, count in collections.Counter(member_list).most_common():
             user = ctx.guild.get_member(int(whoid.strip()))
             if user is not None:
                 if count > 1:
-                    texts.append(f'{place}. {user.nick} ({count} times)')
+                    texts.append(f'{place}. `{escape_markdown(user.nick or user.name)}` ({count} times)')
                 else:
-                    texts.append(f'{place}. {user.nick} ({count} time)')
+                    texts.append(f'{place}. `{escape_markdown(user.nick or user.name)}` ({count} time)')
                 place += 1
-    await ctx.reply('\n'.join(texts))
-
-
-@commands.command()
-async def ligma(ctx):
-    """ Who the hell is Steve Jobs?! """
-    msg = ctx.message
-    if msg.reference is None or isinstance(msg.reference.resolved, DeletedReferencedMessage):
-        await ctx.send(file=File('ext/ligma.jpg'))
-    else:
-        await msg.reference.resolved.reply(file=File('ext/ligma.jpg'))
+        await ctx.send('\n'.join(texts))
 
 
 def setup(bot):
     bot.add_command(notthemxm)
+    bot.add_command(ligma)
+    bot.add_command(imperial)
+    bot.add_command(gaming)
+    bot.add_command(jasper)
     bot.add_command(bread)
     bot.add_command(breadstats)
-    bot.add_command(ligma)
