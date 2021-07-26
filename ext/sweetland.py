@@ -36,7 +36,9 @@ async def play(ctx, channel_num=None):
                 if channel.members:
                     target_channel = channel
                     break
-            await ctx.reply('No voice channel available to bind to!')
+            if target_channel is None:
+                await ctx.reply('No voice channel available to bind to!')
+                return
     else:
         target_channel = ctx.guild.voice_channels[int(channel_num) - 1]
     audio = FFmpegOpusAudio('ext/sweetland.mp3')
