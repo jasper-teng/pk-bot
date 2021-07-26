@@ -21,8 +21,9 @@ async def reload(ctx, *args):
     if not args:
         for ext in list(bot.extensions):
             bot.reload_extension(ext)
-    for arg in args:
-        bot.reload_extension(arg)
+    else:
+        for arg in args:
+            bot.reload_extension(arg)
 
     print('Reloaded modules.')
     await ctx.message.add_reaction('🆗')
