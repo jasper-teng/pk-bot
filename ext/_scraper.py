@@ -27,6 +27,7 @@ PROFILE_LIST_PATH = os.path.join(REL_PATH, 'scores', 'profile_list.json')
 def is_sdvx_id(st):
     if len(st) == 8:
         try:
+            _ = int(st)
             retval = f'SV-{st[:4]}-{st[4:]}'
         except ValueError:
             return False
@@ -42,7 +43,7 @@ def is_sdvx_id(st):
             return False
     else:
         return False
-    return st
+    return retval
 
 
 async def update_songs(full_check=False):
@@ -284,13 +285,14 @@ async def update_score(msg, sdvx_ids=None):
     coros = [coroutine(sdvx_id) for sdvx_id in d_ids]
     await asyncio.gather(*coros)
 
-    await update_message(msg, d_ids, completion_status, unsaved_songs)
+    await update_message(msg, d_ids, completion_status)
 
     sdvx_id_list.sort()
     with safe_open(PROFILE_LIST_PATH, 'w') as f:
         json.dump(sdvx_id_list, f)
 
     await session.close()
+    return unsaved_songs
 
 
 async def update_message(msg, id_list, status, skipped_songs=None):
@@ -307,11 +309,6 @@ async def update_message(msg, id_list, status, skipped_songs=None):
         elif not status[sdvx_id]:
             texts.append(f'{sdvx_id}... ❌')
     desc = '```' + '\n'.join(texts) + '```'
-
-    if skipped_songs is not None:
-        desc += '\n' + 'While scraping data, the following song(s) are missing from the database:'
-        for sn, sa in skipped_songs:
-            desc += f'\n- {sn} / {sa}'
 
     embed = Embed(title='SDVX score scraper', description=desc)
     await msg.edit(embed=embed)
