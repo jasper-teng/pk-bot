@@ -47,6 +47,18 @@ async def jasper(ctx):
     await send_image(ctx, 'ext/jasper.png')
 
 
+@commands.command(aliases=['18', '🔞'])
+async def horney(ctx):
+    """ acab """
+    await send_image(ctx, 'ext/horney.jpg')
+
+
+@commands.command()
+async def acs(ctx):
+    """ tgbtg tbiytb """
+    await ctx.reply('tgbtg tbiytb')
+
+
 @commands.command()
 async def bread(ctx):
     """ bread craftsingle banana craftsingle """
@@ -103,5 +115,7 @@ def setup(bot):
     bot.add_command(imperial)
     bot.add_command(gaming)
     bot.add_command(jasper)
+    bot.add_command(acs)
+    bot.add_command(horney)
     bot.add_command(bread)
     bot.add_command(breadstats)
