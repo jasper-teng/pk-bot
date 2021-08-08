@@ -236,6 +236,7 @@ async def update_score(msg, sdvx_ids=None):
                 try:
                     song_id = id_lookup[song_name, song_artist]
                 except KeyError:
+                    print(f'<Scraper> Warning: cannot match ({song_name}, {song_artist})')
                     unsaved_songs.add((song_name, song_artist))
                     continue
 
@@ -255,13 +256,14 @@ async def update_score(msg, sdvx_ids=None):
 
                         scores[f'{song_id}|{diff}'] = {
                             'clear_mark': clear_mark,
-                            'score': score
+                            'score': score,
+                            'timestamp': timestamp
                         }
 
         new_entries = 0
         for key, data in scores.items():
             prev_data = player_db['scores'].get(key)
-            if data != prev_data:
+            if prev_data is None or data['clear_mark'] != prev_data['clear_mark'] or data['score'] != prev_data['score']:
                 # Store old score for comparison
                 if prev_data:
                     player_db['updated_scores'][key] = prev_data
@@ -292,6 +294,7 @@ async def update_score(msg, sdvx_ids=None):
         json.dump(sdvx_id_list, f)
 
     await session.close()
+    print(unsaved_songs)
     return unsaved_songs
 
 
