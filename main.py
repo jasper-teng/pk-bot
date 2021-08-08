@@ -34,7 +34,7 @@ async def error_handler(ctx, err):
     if not isinstance(err, commands.CommandNotFound):
         tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=5))
         await ctx.message.add_reaction('⛔')
-        await ctx.send(f'{type(err).__name__}: {err}\nTraceback: ```{tb}```', delete_after=10)
+        await ctx.reply(f'{type(err).__name__}: {err}\nTraceback: ```{tb}```', delete_after=10)
 
 
 @bot.event
@@ -46,5 +46,5 @@ bot.load_extension('ext.mangadex')
 bot.load_extension('ext.sdvxin')
 bot.load_extension('ext.viewer')
 bot.load_extension('ext.miscellaneous')
-bot.load_extension('ext.sweetland')
+bot.load_extension('ext.audioplayer')
 bot.run(TOKEN)
