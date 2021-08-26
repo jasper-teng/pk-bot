@@ -54,6 +54,12 @@ async def horney(ctx):
 
 
 @commands.command()
+async def hydrate(ctx):
+    """ friendly reminder to drink a cup of water """
+    await send_image(ctx, 'ext/hydrate.jpg')
+
+
+@commands.command()
 async def acs(ctx):
     """ tgbtg tbiytb """
     await ctx.reply('tgbtg tbiytb')
@@ -115,7 +121,8 @@ def setup(bot):
     bot.add_command(imperial)
     bot.add_command(gaming)
     bot.add_command(jasper)
-    bot.add_command(acs)
     bot.add_command(horney)
+    bot.add_command(hydrate)
+    bot.add_command(acs)
     bot.add_command(bread)
     bot.add_command(breadstats)
