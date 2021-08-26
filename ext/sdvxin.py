@@ -147,7 +147,7 @@ async def addsong(ctx, song_id, *, json_string):
         'levels'    : d['levels'],
         'alt_title' : d.get('alt_title', []),
         'extra_diff': d.get('extra_diff', 0),
-        'version'   : d.get('alt_title', [song_id[:2], ''])
+        'version'   : d.get('version', [song_id[:2], ''])
     }
 
     song_db[song_id] = sd
