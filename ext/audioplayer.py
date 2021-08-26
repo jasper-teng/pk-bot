@@ -64,7 +64,7 @@ async def play(ctx, channel_num=None):
         client.play(audio, after=after)
     elif CUR_CHANNEL != target_channel:
         client = VOICE_CLIENT
-        VOICE_CLIENT.move_to(target_channel)
+        await VOICE_CLIENT.move_to(target_channel)
         CUR_CHANNEL = target_channel
         client.source = audio
     else:
