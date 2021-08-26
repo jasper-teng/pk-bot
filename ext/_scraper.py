@@ -137,26 +137,18 @@ async def update_songs(full_check=False):
     return new_data
 
 
-async def update_score(msg, sdvx_ids=None):
+async def update_score(msg, sdvx_ids):
     # Load config info
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
     uname = config['username']
     pword = config['password']
 
-    if sdvx_ids:
-        sdvx_ids = [s.upper() for s in sdvx_ids]
-        d_ids = [is_sdvx_id(s) for s in sdvx_ids if is_sdvx_id(s)]
-        if d_ids:
-            config['sdvx_ids'].extend(d_ids)
-            config['sdvx_ids'] = list(set(config['sdvx_ids']))
+    config['sdvx_ids'].extend(sdvx_ids)
+    config['sdvx_ids'] = list(set(config['sdvx_ids']))
 
-            with open(CONFIG_PATH, 'w') as f:
-                json.dump(config, f)
-        else:
-            d_ids = config['sdvx_ids']
-    else:
-        d_ids = config['sdvx_ids']
+    with open(CONFIG_PATH, 'w') as f:
+        json.dump(config, f)
 
     # Get session object
     session = await login_routine(uname, pword)
@@ -181,7 +173,7 @@ async def update_score(msg, sdvx_ids=None):
 
     async def coroutine(d_id):
         completion_status[d_id] = None
-        await update_message(msg, d_ids, completion_status)
+        await update_message(msg, sdvx_ids, completion_status)
 
         # Get first page
         soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page=1&sort_id=0&lv=1048575')
@@ -226,7 +218,7 @@ async def update_score(msg, sdvx_ids=None):
         scores = {}
         for pg in range(1, max_page + 1):
             completion_status[d_id] = pg, max_page
-            await update_message(msg, d_ids, completion_status)
+            await update_message(msg, sdvx_ids, completion_status)
 
             soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page={pg}&sort_id=0&lv=1048575')
             table_rows = soup.select('#pc_table tr')[1:]
@@ -284,17 +276,16 @@ async def update_score(msg, sdvx_ids=None):
             print(f'<Scraper> No new entries found for {d_id}.')
         completion_status[d_id] = True
 
-    coros = [coroutine(sdvx_id) for sdvx_id in d_ids]
+    coros = [coroutine(sdvx_id) for sdvx_id in sdvx_ids]
     await asyncio.gather(*coros)
 
-    await update_message(msg, d_ids, completion_status)
+    await update_message(msg, sdvx_ids, completion_status)
 
     sdvx_id_list.sort()
     with safe_open(PROFILE_LIST_PATH, 'w') as f:
         json.dump(sdvx_id_list, f)
 
     await session.close()
-    print(unsaved_songs)
     return unsaved_songs
 
 
