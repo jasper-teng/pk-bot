@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import subprocess
 import time
@@ -10,6 +11,7 @@ from dotenv import load_dotenv
 
 # Global state
 IS_PROCESSING = 0
+PROCESS_COUNT = 0
 SCORE_QUEUED = asyncio.Event()
 SCORE_QUEUED.set()
 
@@ -20,6 +22,8 @@ PROCESS_SCORE = 2
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 VIEWER_DIR = os.path.join('..', 'sdvx-score-viewer')
+ASSOC_JSON = os.path.join('ext', 'register.json')
+ASSOC_OBJ = None
 DEVNULL = subprocess.DEVNULL
 
 
@@ -31,22 +35,52 @@ async def viewer(ctx):
 
 
 @viewer.command()
-async def scoreupdate(ctx, *sdvx_ids):
+async def register(ctx, sdvxid=None):
+    global ASSOC_OBJ
+
+    stored_id = ASSOC_OBJ.get(str(ctx.author.id))
+    if sdvxid is None:
+        if stored_id is None:
+            embed = Embed(title='SDVX score scraper', description='You haven\'t registered a SDVX ID yet.', delete_after=10)
+            await ctx.reply(embed=embed)
+        else:
+            embed = Embed(title='SDVX score scraper', description=f'Your registered SDVX ID is {stored_id}.')
+            await ctx.reply(embed=embed)
+    else:
+        validatedid = scraper.is_sdvx_id(sdvxid)
+        if not validatedid:
+            embed = Embed(title='SDVX score scraper', description=f'{sdvxid} isn\'t a valid SDVX ID.', delete_after=10)
+            await ctx.reply(embed=embed)
+        else:
+            ASSOC_OBJ[str(ctx.author.id)] = validatedid
+            embed = Embed(title='SDVX score scraper', description=f'Your registered SDVX ID is now {validatedid}.')
+            await ctx.reply(embed=embed)
+            with open(ASSOC_JSON, 'w') as f:
+                json.dump(ASSOC_OBJ, f)
+
+
+@viewer.command()
+async def scoreupdate(ctx):
     """
     Updates the scores in the viewer.
     
     Send command with no arguments to update all scores in the database.
     """
-    global IS_PROCESSING, SCORE_QUEUED
+    global IS_PROCESSING, SCORE_QUEUED, ASSOC_OBJ, PROCESS_COUNT
 
-    if IS_PROCESSING == PROCESS_SCORE:
-        await ctx.reply('This request is now queued.')
-        await SCORE_QUEUED.wait()
+    if ASSOC_OBJ.get(str(ctx.author.id)) is None:
+        await ctx.message.add_reaction('⛔')
+        await ctx.reply('Register your SDVX ID first with `-viewer register`!', delete_after=10)
+        return
+    # elif IS_PROCESSING == PROCESS_SCORE:
+        # await ctx.reply('This request is now queued.')
+        # await SCORE_QUEUED.wait()
     elif IS_PROCESSING == PROCESS_SONG:
         await ctx.message.add_reaction('⛔')
-        await ctx.send('Please wait until the currently running process finishes.', delete_after=10)
+        await ctx.reply('Please wait until the currently running process finishes.', delete_after=10)
         return
     IS_PROCESSING = PROCESS_SCORE
+    PROCESS_COUNT += 1
     SCORE_QUEUED.clear()
 
     import time
@@ -55,6 +89,7 @@ async def scoreupdate(ctx, *sdvx_ids):
 
     embed = Embed(title='SDVX score scraper', description=f'Automated score update initiated at {time_str}.')
     message = await ctx.send(embed=embed)
+    sdvx_ids = [ASSOC_OBJ.get(str(ctx.author.id))]
 
     try:
         skipped_songs = await scraper.update_score(message, sdvx_ids)
@@ -77,8 +112,10 @@ async def scoreupdate(ctx, *sdvx_ids):
     await ctx.reply(embed=embed)
     await message.delete(delay=10)
 
-    IS_PROCESSING = 0
-    SCORE_QUEUED.set()
+    PROCESS_COUNT -= 1
+    if PROCESS_COUNT == 0:
+        IS_PROCESSING = 0
+        SCORE_QUEUED.set()
 
 
 @viewer.command()
@@ -123,4 +160,10 @@ async def songupdate(ctx, is_full_update=False):
 
 
 def setup(bot):
+    global ASSOC_OBJ
+    try:
+        with open(ASSOC_JSON, 'r') as f:
+            ASSOC_OBJ = json.load(f)
+    except IOError:
+        ASSOC_OBJ = {}
     bot.add_command(viewer)
