@@ -62,9 +62,12 @@ async def register(ctx, sdvxid=None):
 @viewer.command()
 async def scoreupdate(ctx):
     """
-    Updates the scores in the viewer.
+    Updates the user's scores in the viewer.
     
-    Send command with no arguments to update all scores in the database.
+    Update may fail if:
+    - Profile does not exist
+    - Score data is not set to be publicly visible
+    - Website is down for maintenance
     """
     global IS_PROCESSING, SCORE_QUEUED, ASSOC_OBJ, PROCESS_COUNT
 
@@ -94,8 +97,10 @@ async def scoreupdate(ctx):
     try:
         skipped_songs = await scraper.update_score(message, sdvx_ids)
     except Exception as e:
-        IS_PROCESSING = 0
-        SCORE_QUEUED.set()
+        PROCESS_COUNT -= 1
+        if PROCESS_COUNT == 0:
+            IS_PROCESSING = 0
+            SCORE_QUEUED.set()
         raise e
 
     subprocess.call('git add scores/.', stdout=DEVNULL, cwd=VIEWER_DIR)
@@ -122,11 +127,11 @@ async def scoreupdate(ctx):
 @commands.has_role(ROLE_ID)
 async def songupdate(ctx, is_full_update=False):
     """ Updates the song database in the viewer. """
-    global IS_PROCESSING
+    global IS_PROCESSING, PROCESS_COUNT
 
     if IS_PROCESSING:
         await ctx.message.add_reaction('⛔')
-        await ctx.send('Please wait until the currently running process finishes.', delete_after=10)
+        await ctx.send(f'Please wait until the currently running process ({PROCESS_COUNT}) finishes.', delete_after=10)
         return
     IS_PROCESSING = PROCESS_SONG
 
