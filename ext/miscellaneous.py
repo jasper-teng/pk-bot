@@ -66,6 +66,12 @@ async def goodbye(ctx):
 
 
 @commands.command()
+async def denzel(ctx):
+    """ has anyone ever beat you up before """
+    await send_image(ctx, 'ext/denzel.png')
+
+
+@commands.command()
 async def acs(ctx):
     """ tgbtg tbiytb """
     await ctx.reply('tgbtg tbiytb')
@@ -130,6 +136,7 @@ def setup(bot):
     bot.add_command(horney)
     bot.add_command(hydrate)
     bot.add_command(goodbye)
+    bot.add_command(denzel)
     bot.add_command(acs)
     bot.add_command(bread)
     bot.add_command(breadstats)
