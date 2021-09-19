@@ -5,7 +5,7 @@ from discord import File, DeletedReferencedMessage
 from discord.ext import commands
 from discord.utils import escape_markdown
 
-BREAD_COUNTER = [0, 0, 0]
+BREAD_COUNTER = [0, 0, 0, 0]
 LAST_REFRESH = None
 
 
@@ -72,6 +72,18 @@ async def denzel(ctx):
 
 
 @commands.command()
+async def jbl(ctx):
+    """ LOVE """
+    await send_image(ctx, 'ext/jbl.png')
+
+
+@commands.command()
+async def candii(ctx):
+    """ sapphirehime """
+    await send_image(ctx, 'ext/gnome.png')
+
+
+@commands.command()
 async def acs(ctx):
     """ tgbtg tbiytb """
     await ctx.reply('tgbtg tbiytb')
@@ -84,7 +96,7 @@ async def bread(ctx):
     current_time = time.strftime('%Y%m%d')
     if LAST_REFRESH is None or current_time > LAST_REFRESH:
         LAST_REFRESH = current_time
-        BREAD_COUNTER = [0, 0, 0]
+        BREAD_COUNTER = [0, 0, 0, 0]
 
     BREAD_COUNTER[0] += 1
     if random.random() < 0.01:
@@ -92,9 +104,12 @@ async def bread(ctx):
         await ctx.reply(file=File('ext/bread3.png'))
         with open('ext/ssr_pulls.txt', 'a') as f:
             f.write(f'{ctx.author.id}\n')
-    elif random.random() < 0.1:
+    elif random.random() < 0.11:
         BREAD_COUNTER[1] += 1
         await ctx.reply(file=File('ext/bread2.png'))
+    elif random.random() < 0.21:
+        BREAD_COUNTER[3] += 1
+        await ctx.reply(file=File('ext/bread4.png'))
     else:
         await ctx.reply('bread craftsingle banana craftsingle', file=File('ext/bread.png'))
 
@@ -110,6 +125,7 @@ async def breadstats(ctx):
     ]
     if BREAD_COUNTER[0] > 0:
         texts.append(f'out of those, {BREAD_COUNTER[1]} ({BREAD_COUNTER[1]/BREAD_COUNTER[0]*100:.2f}%) of them were jasper')
+        texts.append(f'out of those, {BREAD_COUNTER[3]} ({BREAD_COUNTER[3]/BREAD_COUNTER[0]*100:.2f}%) of them were gartic jasper')
         texts.append(f'and {BREAD_COUNTER[2]} ({BREAD_COUNTER[2]/BREAD_COUNTER[0]*100:.2f}%) of them were SSR jasper')
     await ctx.reply('\n'.join(texts))
 
@@ -137,6 +153,8 @@ def setup(bot):
     bot.add_command(hydrate)
     bot.add_command(goodbye)
     bot.add_command(denzel)
+    bot.add_command(jbl)
+    bot.add_command(candii)
     bot.add_command(acs)
     bot.add_command(bread)
     bot.add_command(breadstats)
