@@ -92,10 +92,10 @@ async def scoreupdate(ctx):
 
     embed = Embed(title='SDVX score scraper', description=f'Automated score update initiated at {time_str}.')
     message = await ctx.send(embed=embed)
-    sdvx_ids = [ASSOC_OBJ.get(str(ctx.author.id))]
+    sdvx_id = ASSOC_OBJ.get(str(ctx.author.id))
 
     try:
-        skipped_songs = await scraper.update_score(message, sdvx_ids)
+        output = await scraper.update_score(message, sdvx_id)
     except Exception as e:
         PROCESS_COUNT -= 1
         if PROCESS_COUNT == 0:
@@ -107,10 +107,10 @@ async def scoreupdate(ctx):
     subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
     subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=VIEWER_DIR)
 
-    desc = 'Automated score update finished.'
-    if len(skipped_songs) > 0:
+    desc = f'Automated score update finished. {output["new_count"]} new {"entry" if output["new_count"] == 1 else "entries"} saved.'
+    if len(output['skipped']) > 0:
         desc += '\n\n' + 'While scraping data, the following song(s) are missing from the database:'
-        for sn, sa in skipped_songs:
+        for sn, sa in output['skipped']:
             desc += f'\n- {sn} / {sa}'
 
     embed = Embed(title='SDVX score scraper', description=desc)
