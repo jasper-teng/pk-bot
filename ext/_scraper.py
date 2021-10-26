@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import sys
@@ -137,14 +136,15 @@ async def update_songs(full_check=False):
     return new_data
 
 
-async def update_score(msg, sdvx_ids):
+async def update_score(msg, sdvx_id):
     # Load config info
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
     uname = config['username']
     pword = config['password']
 
-    config['sdvx_ids'].extend(sdvx_ids)
+    config['sdvx_ids'].append(sdvx_id)
+    # Remove duplicates
     config['sdvx_ids'] = list(set(config['sdvx_ids']))
 
     with open(CONFIG_PATH, 'w') as f:
@@ -171,137 +171,135 @@ async def update_score(msg, sdvx_ids):
     completion_status = {}
     unsaved_songs = set()
 
-    async def coroutine(d_id):
-        completion_status[d_id] = None
-        await update_message(msg, sdvx_ids, completion_status)
+    completion_status[sdvx_id] = None
+    await update_message(msg, sdvx_id, completion_status)
 
-        # Get first page
-        soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page=1&sort_id=0&lv=1048575')
-        try:
-            max_page = int(soup.select('.page_num')[-1].string)
-        except IndexError:
-            print(f'<Scraper> Couldn\'t scrape ID {d_id}. Scores may not be public, or profile does not exist.')
-            completion_status[d_id] = False
-            return
+    # Get first page
+    soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={sdvx_id}&page=1&sort_id=0&lv=1048575')
+    try:
+        max_page = int(soup.select('.page_num')[-1].string)
+    except IndexError:
+        print(f'<Scraper> Couldn\'t scrape ID {sdvx_id}. Scores may not be public, or profile does not exist.')
+        completion_status[sdvx_id] = False
+        return
 
-        # Load/initialize score database
-        try:
-            with open(os.path.join(REL_PATH, 'scores', f'{d_id}.json'), 'r') as f:
-                player_db = json.load(f)
-        except json.JSONDecodeError:
-            print(f'<Scraper> Database cannot be read. Overwriting {d_id}.json.')
-            player_db = {}
-        except IOError:
-            print(f'<Scraper> Creating new file for ID {d_id}.')
-            player_db = {}
+    # Load/initialize score database
+    try:
+        with open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'r') as f:
+            player_db = json.load(f)
+    except json.JSONDecodeError:
+        print(f'<Scraper> Database cannot be read. Overwriting {sdvx_id}.json.')
+        player_db = {}
+    except IOError:
+        print(f'<Scraper> Creating new file for ID {sdvx_id}.')
+        player_db = {}
 
-        # Get profile data
-        soup = await fetch_page(session, f'{K_PROFILEURL}?rival_id={d_id}')
-        card_name = list(soup.select_one('#player_name').stripped_strings)[1]
-        play_count = soup.select_one('.profile_cnt').string
-        skill_level = soup.select_one('.profile_skill')['id']
-        try:
-            skill_name = list(soup.select_one('.profile_skill').stripped_strings)[0]
-        except IndexError:
-            skill_name = 'N/A'
-        timestamp = time.time() * 1000
+    # Get profile data
+    soup = await fetch_page(session, f'{K_PROFILEURL}?rival_id={sdvx_id}')
+    card_name = list(soup.select_one('#player_name').stripped_strings)[1]
+    play_count = soup.select_one('.profile_cnt').string
+    skill_level = soup.select_one('.profile_skill')['id']
+    try:
+        skill_name = list(soup.select_one('.profile_skill').stripped_strings)[0]
+    except IndexError:
+        skill_name = 'N/A'
+    timestamp = time.time() * 1000
 
-        player_db['card_name'] = card_name
-        player_db['play_count'] = get_play_count(play_count)
-        player_db['skill_level'] = get_skill_level(skill_level)
-        player_db['skill_name'] = skill_name
-        player_db['timestamp'] = timestamp
-        player_db['scores'] = player_db.get('scores') or {}
-        player_db['updated_scores'] = {}
+    player_db['card_name'] = card_name
+    player_db['play_count'] = get_play_count(play_count)
+    player_db['skill_level'] = get_skill_level(skill_level)
+    player_db['skill_name'] = skill_name
+    player_db['timestamp'] = timestamp
+    player_db['scores'] = player_db.get('scores') or {}
+    player_db['updated_scores'] = {}
 
-        # Loop through pages
-        scores = {}
-        for pg in range(1, max_page + 1):
-            completion_status[d_id] = pg, max_page
-            await update_message(msg, sdvx_ids, completion_status)
+    # Loop through pages
+    scores = {}
+    for pg in range(1, max_page + 1):
+        completion_status[sdvx_id] = pg, max_page
+        await update_message(msg, sdvx_id, completion_status)
 
-            soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={d_id}&page={pg}&sort_id=0&lv=1048575')
-            table_rows = soup.select('#pc_table tr')[1:]
+        soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={sdvx_id}&page={pg}&sort_id=0&lv=1048575')
+        table_rows = soup.select('#pc_table tr')[1:]
 
-            for song_rows in zip(*[iter(table_rows)] * 6):
-                [song_name, song_artist] = list(song_rows[0].stripped_strings)
-                try:
-                    song_id = id_lookup[song_name, song_artist]
-                except KeyError:
-                    print(f'<Scraper> Warning: cannot match ({song_name}, {song_artist})')
-                    unsaved_songs.add((song_name, song_artist))
-                    continue
+        for song_rows in zip(*[iter(table_rows)] * 6):
+            [song_name, song_artist] = list(song_rows[0].stripped_strings)
+            try:
+                song_id = id_lookup[song_name, song_artist]
+            except KeyError:
+                print(f'<Scraper> Warning: cannot match ({song_name}, {song_artist})')
+                unsaved_songs.add((song_name, song_artist))
+                continue
 
-                for diff, row in enumerate(song_rows[1:]):
-                    score_node = row.select_one('#score_col_3') or row.select_one('#score_col_4')
-                    score_node_str = list(score_node.stripped_strings)[0]
-                    
-                    if not score_node:
-                        print(f'{K_SCOREURL}?rival_id={d_id}&page={pg}&sort_id=0&lv=1048575')
-                        print(row.prettify())
-                        print(song_name)
+            for diff, row in enumerate(song_rows[1:]):
+                score_node = row.select_one('#score_col_3') or row.select_one('#score_col_4')
+                score_node_str = list(score_node.stripped_strings)[0]
+                
+                if not score_node:
+                    print(f'{K_SCOREURL}?rival_id={sdvx_id}&page={pg}&sort_id=0&lv=1048575')
+                    print(row.prettify())
+                    print(song_name)
 
-                    if score_node_str != '0':
-                        clear_mark_url = score_node.select_one('img')['src']
-                        clear_mark = CLEAR_MARK_TABLE[clear_mark_url[47:-4]]
-                        score = int(score_node_str)
+                if score_node_str != '0':
+                    clear_mark_url = score_node.select_one('img')['src']
+                    clear_mark = CLEAR_MARK_TABLE[clear_mark_url[47:-4]]
+                    score = int(score_node_str)
 
-                        scores[f'{song_id}|{diff}'] = {
-                            'clear_mark': clear_mark,
-                            'score': score,
-                            'timestamp': timestamp
-                        }
+                    scores[f'{song_id}|{diff}'] = {
+                        'clear_mark': clear_mark,
+                        'score': score,
+                        'timestamp': timestamp
+                    }
 
-        new_entries = 0
-        for key, data in scores.items():
-            prev_data = player_db['scores'].get(key)
-            if prev_data is None or data['clear_mark'] != prev_data['clear_mark'] or data['score'] != prev_data['score']:
-                # Store old score for comparison
-                if prev_data:
-                    player_db['updated_scores'][key] = prev_data
-                else:
-                    player_db['updated_scores'][key] = {'clear_mark': None, 'score': 0}
-                player_db['scores'][key] = data
-                new_entries += 1
+    new_entries = 0
+    for key, data in scores.items():
+        prev_data = player_db['scores'].get(key)
+        if prev_data is None or data['clear_mark'] != prev_data['clear_mark'] or data['score'] != prev_data['score']:
+            # Store old score for comparison
+            if prev_data:
+                player_db['updated_scores'][key] = prev_data
+            else:
+                player_db['updated_scores'][key] = {'clear_mark': None, 'score': 0}
+            player_db['scores'][key] = data
+            new_entries += 1
 
-        # Save data
-        if new_entries:
-            with safe_open(os.path.join(REL_PATH, 'scores', f'{d_id}.json'), 'w', encoding='utf-8') as f:
-                json.dump(player_db, f)
-            if d_id not in sdvx_id_list:
-                sdvx_id_list.append(d_id)
+    # Save data
+    if new_entries:
+        with safe_open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'w', encoding='utf-8') as f:
+            json.dump(player_db, f)
+        if sdvx_id not in sdvx_id_list:
+            sdvx_id_list.append(sdvx_id)
 
-            print(f'<Scraper> {new_entries} new entry(s) saved to {d_id}.json.')
-        else:
-            print(f'<Scraper> No new entries found for {d_id}.')
-        completion_status[d_id] = True
+        print(f'<Scraper> {new_entries} new entry(s) saved to {sdvx_id}.json.')
+    else:
+        print(f'<Scraper> No new entries found for {sdvx_id}.')
+    completion_status[sdvx_id] = True
 
-    coros = [coroutine(sdvx_id) for sdvx_id in sdvx_ids]
-    await asyncio.gather(*coros)
-
-    await update_message(msg, sdvx_ids, completion_status)
+    await update_message(msg, sdvx_id, completion_status)
 
     sdvx_id_list.sort()
     with safe_open(PROFILE_LIST_PATH, 'w') as f:
         json.dump(sdvx_id_list, f)
 
     await session.close()
-    return unsaved_songs
+    return {
+        'skipped': unsaved_songs,
+        'new_count': new_entries
+    }
 
 
-async def update_message(msg, id_list, status, skipped_songs=None):
+async def update_message(msg, sdvx_id, status, skipped_songs=None):
     texts = []
-    for sdvx_id in sorted(id_list):
-        if sdvx_id not in status:
-            texts.append(sdvx_id)
-        elif status[sdvx_id] is None:
-            texts.append(f'{sdvx_id}...')
-        elif isinstance(status[sdvx_id], tuple):
-            texts.append(f'{sdvx_id}... {status[sdvx_id][0]}/{status[sdvx_id][1]}')
-        elif status[sdvx_id]:
-            texts.append(f'{sdvx_id}... ⭕')
-        elif not status[sdvx_id]:
-            texts.append(f'{sdvx_id}... ❌')
+    if sdvx_id not in status:
+        texts.append(sdvx_id)
+    elif status[sdvx_id] is None:
+        texts.append(f'{sdvx_id}...')
+    elif isinstance(status[sdvx_id], tuple):
+        texts.append(f'{sdvx_id}... {status[sdvx_id][0]}/{status[sdvx_id][1]}')
+    elif status[sdvx_id]:
+        texts.append(f'{sdvx_id}... ⭕')
+    elif not status[sdvx_id]:
+        texts.append(f'{sdvx_id}... ❌')
     desc = '```' + '\n'.join(texts) + '```'
 
     embed = Embed(title='SDVX score scraper', description=desc)
