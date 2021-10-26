@@ -26,7 +26,7 @@ def safe_open(fn, *args, **kwargs):
 
 def get_play_count(s):
     try:
-        return int(s)
+        return int(s[:-1])
     except ValueError:
         return None
 
