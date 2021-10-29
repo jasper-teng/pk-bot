@@ -96,6 +96,16 @@ class Images(commands.Cog):
     async def sexualtension(self, ctx):
         """ Sexual Tension On The PK Server . """
         await self.send_image(ctx, 'ext/pktension.png')
+    
+    @commands.command()
+    async def piu(self, ctx):
+        """ why the fuck am i playing this game """
+        await self.send_image(ctx, 'ext/piu.png')
+    
+    @commands.command()
+    async def er(self, ctx):
+        """ presenting to the emergency room """
+        await self.send_image(ctx, 'ext/lormaigai.jpg')
 
 
 class BreadGacha(commands.Cog, name='Bread gacha'):
