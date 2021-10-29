@@ -16,29 +16,119 @@ BASE_DOMAIN = 'https://sdvx.in'
 BASE_DIFF_NAMES = ['NOV', 'ADV', 'EXH', '', 'MXM']
 BASE_DIFF_SUFFIX = ['n', 'a', 'e', '', 'm']
 EXTRA_DIFF_NAMES = ['', 'INF', 'GRV', 'HVN', 'VVD']
-EXTRA_DIFF_SUFFIX= ['', 'i', 'g', 'h', 'v']
+EXTRA_DIFF_SUFFIX = ['', 'i', 'g', 'h', 'v']
 
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 
-
-@commands.group(invoke_without_command=True, aliases=['sdvx'])
-async def sdvxin(ctx, *args):
-    """ SDVX.in related commands """
-    if ctx.invoked_subcommand is None:
-        await search(ctx, query=' '.join(args))
+with open('ext/sdvxin_db.json', 'r') as f:
+    song_db = json.load(f)
 
 
-@sdvxin.command(hidden=True)
-async def fullsearch(ctx, *, query):
-    """ Searches for a SDVX song title, no limit on multiple results. """
-    await _search(ctx, query, True)
+class SdvxInLinker(commands.Cog, name='sdvx.in'):
+    @commands.group(invoke_without_command=True, aliases=['sdvx'])
+    async def sdvxin(self, ctx, *args):
+        """ SDVX.in related commands """
+        if ctx.invoked_subcommand is None:
+            await self.search(ctx, query=' '.join(args))
 
+    @sdvxin.command(hidden=True)
+    async def fullsearch(self, ctx, *, query):
+        """ Searches for a SDVX song title, no limit on multiple results. """
+        await _search(ctx, query, True)
 
-@sdvxin.command()
-async def search(ctx, *, query):
-    """ Searches for a SDVX song title. """
-    await _search(ctx, query)
+    @sdvxin.command()
+    async def search(self, ctx, *, query):
+        """ Searches for a SDVX song title. """
+        await _search(ctx, query)
+
+    @sdvxin.command(hidden=True)
+    @commands.has_role(ROLE_ID)
+    async def listalias(self, ctx, *, song_id):
+        aliases = get_aliases(song_id)
+        text = '\n'.join([f'"{escape_markdown(e)}"' for e in aliases])
+
+        embed = Embed(title=f'Aliases for {song_db[song_id]["title"]} ({song_id}):', description=text)
+        embed.set_footer(text='Powered by sdvx.in')
+        await ctx.send(embed=embed)
+
+    @sdvxin.command(hidden=True)
+    @commands.has_role(ROLE_ID)
+    async def addalias(self, ctx, song_id, new_alias):
+        d = song_db[song_id]
+        if not new_alias.isascii():
+            raise ValueError(f'Alias must be ASCII only. (got "{new_alias}")')
+        d['alt_title'].append(new_alias)
+        save_database()
+        print(f'<SDVXIN> Added new alias for ID {song_id}.')
+
+        embed = Embed(title=f'Alias "{new_alias}" added for {d["title"]} ({song_id}).')
+        embed.set_footer(text='Powered by sdvx.in')
+        await ctx.send(embed=embed)
+
+    @sdvxin.command(hidden=True)
+    @commands.has_role(ROLE_ID)
+    async def addsong(self, ctx, song_id, *, json_string):
+        if song_id in song_db:
+            raise ValueError(f'ID already exists.')
+
+        # Data must at least have:
+        # - title
+        # - artist
+        # - levels
+        # Optional:
+        # - alt_title (assumed to be [] if not provided)
+        # - extra_diff (assumed to be 0 if not provided)
+        # - version (will be extracted from song_id if not provided)
+
+        d = json.loads(json_string)
+        if not ('title' in d and 'artist' in d and 'levels' in d):
+            raise IndexError('Song data missing required fields (title, artist, levels).')
+
+        sd = {
+            'title'     : d['title'],
+            'artist'    : d['artist'],
+            'levels'    : d['levels'],
+            'alt_title' : d.get('alt_title', []),
+            'extra_diff': d.get('extra_diff', 0),
+            'version'   : d.get('version', [song_id[:2], ''])
+        }
+
+        song_db[song_id] = sd
+        save_database()
+        print(f'<SDVXIN> Added new song entry with ID {song_id}.')
+
+        embed = Embed(title=f'New song entry added (ID {song_id}).', description=pprint.pformat(sd))
+        embed.set_footer(text='Powered by sdvx.in')
+        await ctx.send(embed=embed)
+
+    @sdvxin.command(hidden=True)
+    @commands.has_role(ROLE_ID)
+    async def overridefield(self, ctx, song_id, *, json_string):
+        if song_id not in song_db:
+            raise ValueError(f'ID does not exist.')
+
+        # Allowed fields:
+        # - title
+        # - artist
+        # - levels
+        # - alt_title (assumed to be [] if not provided)
+        # - extra_diff (assumed to be 0 if not provided)
+        # - version (will be extracted from song_id if not provided)
+        valid_fields = ['title', 'artist', 'levels', 'alt_title', 'extra_diff', 'version']
+
+        d = json.loads(json_string)
+        d = {k: d[k] for k in valid_fields if k in d}
+
+        for k, v in d.items():
+            song_db[song_id][k] = v
+
+        save_database()
+        print(f'<SDVXIN> Overwrote fields {list(d.keys())} in ID {song_id}.')
+
+        embed = Embed(title=f'Overwrote the following fields in ID {song_id}.', description=pprint.pformat(d))
+        embed.set_footer(text='Powered by sdvx.in')
+        await ctx.send(embed=embed)
 
 
 async def _search(ctx, query, list_all=False):
@@ -96,98 +186,6 @@ async def _search(ctx, query, list_all=False):
         await ctx.send(embed=embed)
 
 
-@sdvxin.command(hidden=True)
-@commands.has_role(ROLE_ID)
-async def listalias(ctx, *, song_id):
-    aliases = get_aliases(song_id)
-    text = '\n'.join([f'"{escape_markdown(e)}"' for e in aliases])
-
-    embed = Embed(title=f'Aliases for {song_db[song_id]["title"]} ({song_id}):', description=text)
-    embed.set_footer(text='Powered by sdvx.in')
-    await ctx.send(embed=embed)
-
-
-@sdvxin.command(hidden=True)
-@commands.has_role(ROLE_ID)
-async def addalias(ctx, song_id, new_alias):
-    d = song_db[song_id]
-    if not new_alias.isascii():
-        raise ValueError(f'Alias must be ASCII only. (got "{new_alias}")')
-    d['alt_title'].append(new_alias)
-    save_database()
-    print(f'<SDVXIN> Added new alias for ID {song_id}.')
-
-    embed = Embed(title=f'Alias "{new_alias}" added for {d["title"]} ({song_id}).')
-    embed.set_footer(text='Powered by sdvx.in')
-    await ctx.send(embed=embed)
-
-
-@sdvxin.command(hidden=True)
-@commands.has_role(ROLE_ID)
-async def addsong(ctx, song_id, *, json_string):
-    if song_id in song_db:
-        raise ValueError(f'ID already exists.')
-
-    # Data must at least have:
-    # - title
-    # - artist
-    # - levels
-    # Optional:
-    # - alt_title (assumed to be [] if not provided)
-    # - extra_diff (assumed to be 0 if not provided)
-    # - version (will be extracted from song_id if not provided)
-
-    d = json.loads(json_string)
-    if not ('title' in d and 'artist' in d and 'levels' in d):
-        raise IndexError('Song data missing required fields (title, artist, levels).')
-
-    sd = {
-        'title'     : d['title'],
-        'artist'    : d['artist'],
-        'levels'    : d['levels'],
-        'alt_title' : d.get('alt_title', []),
-        'extra_diff': d.get('extra_diff', 0),
-        'version'   : d.get('version', [song_id[:2], ''])
-    }
-
-    song_db[song_id] = sd
-    save_database()
-    print(f'<SDVXIN> Added new song entry with ID {song_id}.')
-
-    embed = Embed(title=f'New song entry added (ID {song_id}).', description=pprint.pformat(sd))
-    embed.set_footer(text='Powered by sdvx.in')
-    await ctx.send(embed=embed)
-
-
-@sdvxin.command(hidden=True)
-@commands.has_role(ROLE_ID)
-async def overridefield(ctx, song_id, *, json_string):
-    if song_id not in song_db:
-        raise ValueError(f'ID does not exist.')
-
-    # Allowed fields:
-    # - title
-    # - artist
-    # - levels
-    # - alt_title (assumed to be [] if not provided)
-    # - extra_diff (assumed to be 0 if not provided)
-    # - version (will be extracted from song_id if not provided)
-    valid_fields = ['title', 'artist', 'levels', 'alt_title', 'extra_diff', 'version']
-
-    d = json.loads(json_string)
-    d = {k: d[k] for k in valid_fields if k in d}
-
-    for k, v in d.items():
-        song_db[song_id][k] = v
-
-    save_database()
-    print(f'<SDVXIN> Overwrote fields {list(d.keys())} in ID {song_id}.')
-
-    embed = Embed(title=f'Overwrote the following fields in ID {song_id}.', description=pprint.pformat(d))
-    embed.set_footer(text='Powered by sdvx.in')
-    await ctx.send(embed=embed)
-
-
 async def send_result(ctx, song_id):
     d = song_db[song_id]
     suffix = 'e.png' if d['levels'][4] == 0 else 'm.png'
@@ -210,10 +208,6 @@ async def send_result(ctx, song_id):
     await ctx.send(embed=embed)
 
 
-def setup(bot):
-    bot.add_command(sdvxin)
-
-
 def get_aliases(song_id):
     data = song_db[song_id]
     strings = [song_id, data['title']] + data['alt_title']
@@ -227,5 +221,5 @@ def save_database():
         json.dump(song_db, f)
 
 
-with open('ext/sdvxin_db.json', 'r') as f:
-    song_db = json.load(f)
+def setup(bot):
+    bot.add_cog(SdvxInLinker())

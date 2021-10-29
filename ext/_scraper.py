@@ -178,10 +178,10 @@ async def update_score(msg, sdvx_id):
     soup = await fetch_page(session, f'{K_SCOREURL}?rival_id={sdvx_id}&page=1&sort_id=0&lv=1048575')
     try:
         max_page = int(soup.select('.page_num')[-1].string)
-    except IndexError:
+    except IndexError as e:
         print(f'<Scraper> Couldn\'t scrape ID {sdvx_id}. Scores may not be public, or profile does not exist.')
         completion_status[sdvx_id] = False
-        return
+        raise e
 
     # Load/initialize score database
     try:

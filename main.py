@@ -13,6 +13,14 @@ ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))  # should be 839485641339306044
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='-', intents=intents)
+extensions = [
+    'ext.audioplayer',
+    'ext.miscellaneous',
+    # 'ext.mangadex',
+    'ext.sdvxin',
+    'ext.viewer',
+    'ext.volforce'
+]
 
 
 @bot.command(hidden=True)
@@ -23,16 +31,18 @@ async def reload(ctx, *args):
             bot.reload_extension(ext)
     else:
         for arg in args:
-            bot.reload_extension(arg)
+            # silently ignore extensions not present
+            if arg in bot.extensions:
+                bot.reload_extension(arg)
 
-    print('Reloaded modules.')
+    print('Reloaded module(s).')
     await ctx.message.add_reaction('🆗')
 
 
 @bot.listen('on_command_error')
 async def error_handler(ctx, err):
     if not isinstance(err, commands.CommandNotFound):
-        tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=5))
+        tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=3))
         await ctx.message.add_reaction('⛔')
         await ctx.reply(f'{type(err).__name__}: {err}\nTraceback: ```{tb}```', delete_after=10)
 
@@ -42,9 +52,6 @@ async def on_ready():
     print(f'{bot.user} has connected to Discord!')
 
 
-bot.load_extension('ext.mangadex')
-bot.load_extension('ext.sdvxin')
-bot.load_extension('ext.viewer')
-bot.load_extension('ext.miscellaneous')
-bot.load_extension('ext.audioplayer')
+for _ext in extensions:
+    bot.load_extension(_ext)
 bot.run(TOKEN)

@@ -2,183 +2,99 @@ import asyncio
 from discord import FFmpegOpusAudio
 from discord.ext import commands
 
-VOICE_CLIENT = None
-CUR_CHANNEL = None
-AUDIO_FILE = None
 
+class AudioPlayer(commands.Cog, name='VC stuff'):
+    def __init__(self):
+        self._voice_client = None
+        self._cur_channel = None
+        self._audio_file = None
 
-@commands.group(invoke_without_command=True, aliases=['sweetsland'])
-async def sweetland(ctx):
-    """ ♫♫♩～ """
-    if ctx.invoked_subcommand is None:
-        await ctx.send('https://www.youtube.com/watch?v=ws4vY996y8M')
+    @commands.command(aliases=['sweetsland'])
+    async def sweetland(self, ctx, channel_num=None):
+        """ ♫♫♩～ """
+        await self._play(ctx, 'ext/sweetland.mp3', channel_num)
 
+    @commands.command()
+    async def shart(self, ctx, channel_num=None):
+        """ AAAAAAAAAAAAAAAA """
+        await self._play(ctx, 'ext/shart.mp3', channel_num)
 
-@sweetland.command()
-async def play(ctx, channel_num=None):
-    """
-    Play music in a voice channel.
-    
-    If channel number isn't given, defaults to the user's voice channel.
-    If user isn't in a voice channel, defaults to the first voice channel that is occupied.
-    """
-    global VOICE_CLIENT, AUDIO_FILE, CUR_CHANNEL
-    if VOICE_CLIENT is not None:
-        if AUDIO_FILE == 'sweetland':
+    @commands.command()
+    async def stop(self, ctx):
+        if self._voice_client is None:
             return
-        else:
-            AUDIO_FILE = 'sweetland'
 
-    # Select channel
-    target_channel = None
-    if channel_num is None:
-        author = ctx.author
-        if author.voice and author.voice.channel is not None:
-            target_channel = author.voice.channel
-        else:
-            for channel in ctx.guild.voice_channels:
-                if channel.members:
-                    target_channel = channel
-                    break
-            if target_channel is None:
-                await ctx.reply('No voice channel available to bind to!')
+        client = self._voice_client
+        self._voice_client = None
+
+        client.stop()
+        await client.disconnect()
+        await ctx.message.add_reaction('🆗')
+
+    async def _play(self, ctx, fn, channel_num):
+        """
+        Play music in a voice channel.
+
+        If channel number isn't given, defaults to the user's voice channel.
+        If user isn't in a voice channel, defaults to the first voice channel that is occupied.
+        """
+        if self._voice_client is not None:
+            if self._audio_file == fn:
                 return
-    else:
-        target_channel = ctx.guild.voice_channels[int(channel_num) - 1]
-    audio = FFmpegOpusAudio('ext/sweetland.mp3')
-    await ctx.message.add_reaction('🆗')
+            else:
+                self._audio_file = fn
 
-    stop_event = asyncio.Event()
-    loop = asyncio.get_event_loop()
-    def after(err):
-        if err:
-            raise err
-        def clear():
-            stop_event.set()
-        loop.call_soon_threadsafe(clear)
+        # Select channel
+        target_channel = None
+        if channel_num is None:
+            author = ctx.author
+            if author.voice and author.voice.channel is not None:
+                target_channel = author.voice.channel
+            else:
+                for channel in ctx.guild.voice_channels:
+                    if channel.members:
+                        target_channel = channel
+                        break
+                if target_channel is None:
+                    await ctx.reply('No voice channel available to bind to!')
+                    return
+        else:
+            target_channel = ctx.guild.voice_channels[int(channel_num) - 1]
+        audio = FFmpegOpusAudio(fn)
+        await ctx.message.add_reaction('🆗')
 
-    if CUR_CHANNEL is None:
-        client = await target_channel.connect()
-        CUR_CHANNEL = target_channel
-        VOICE_CLIENT = client
-        client.play(audio, after=after)
-    elif CUR_CHANNEL != target_channel:
-        client = VOICE_CLIENT
-        await VOICE_CLIENT.move_to(target_channel)
-        CUR_CHANNEL = target_channel
-        client.source = audio
-    else:
-        client = VOICE_CLIENT
-        client.source = audio
-        return
+        stop_event = asyncio.Event()
+        loop = asyncio.get_event_loop()
 
-    await stop_event.wait()
-    await client.disconnect()
-    VOICE_CLIENT = None
-    CUR_CHANNEL = None
-    AUDIO_FILE = None
+        def after(err):
+            if err:
+                raise err
 
+            def clear():
+                stop_event.set()
+            loop.call_soon_threadsafe(clear)
 
-@sweetland.command()
-async def stop(ctx):
-    global VOICE_CLIENT
-    if VOICE_CLIENT is None:
-        return
-
-    client = VOICE_CLIENT
-    VOICE_CLIENT = None
-
-    client.stop()
-    await client.disconnect()
-    await ctx.message.add_reaction('🆗')
-
-
-@commands.group(invoke_without_command=True)
-async def shart(ctx):
-    """ AAAAAAAAAAAAAAAA """
-    if ctx.invoked_subcommand is None:
-        await ctx.send('https://cdn.discordapp.com/attachments/648560458420322306/835478668981043310/video0.mp4')
-
-
-@shart.command()
-async def play(ctx, channel_num=None):
-    """
-    Play music in a voice channel.
-    
-    If channel number isn't given, defaults to the user's voice channel.
-    If user isn't in a voice channel, defaults to the first voice channel that is occupied.
-    """
-    global VOICE_CLIENT, AUDIO_FILE, CUR_CHANNEL
-    if VOICE_CLIENT is not None:
-        if AUDIO_FILE == 'shart':
+        if self._cur_channel is None:
+            client = await target_channel.connect()
+            self._cur_channel = target_channel
+            self._voice_client = client
+            client.play(audio, after=after)
+        elif self._cur_channel != target_channel:
+            client = self._voice_client
+            await self._voice_client.move_to(target_channel)
+            self._cur_channel = target_channel
+            client.source = audio
+        else:
+            client = self._voice_client
+            client.source = audio
             return
-        else:
-            AUDIO_FILE = 'shart'
 
-    # Select channel
-    target_channel = None
-    if channel_num is None:
-        author = ctx.author
-        if author.voice and author.voice.channel is not None:
-            target_channel = author.voice.channel
-        else:
-            for channel in ctx.guild.voice_channels:
-                if channel.members:
-                    target_channel = channel
-                    break
-            if target_channel is None:
-                await ctx.reply('No voice channel available to bind to!')
-                return
-    else:
-        target_channel = ctx.guild.voice_channels[int(channel_num) - 1]
-    audio = FFmpegOpusAudio('ext/shart.mp3')
-    await ctx.message.add_reaction('🆗')
-
-    stop_event = asyncio.Event()
-    loop = asyncio.get_event_loop()
-    def after(err):
-        if err:
-            raise err
-        def clear():
-            stop_event.set()
-        loop.call_soon_threadsafe(clear)
-
-    if CUR_CHANNEL is None:
-        client = await target_channel.connect()
-        CUR_CHANNEL = target_channel
-        VOICE_CLIENT = client
-        client.play(audio, after=after)
-    elif CUR_CHANNEL != target_channel:
-        client = VOICE_CLIENT
-        VOICE_CLIENT.move_to(target_channel)
-        CUR_CHANNEL = target_channel
-        client.source = audio
-    else:
-        client = VOICE_CLIENT
-        client.source = audio
-        return
-
-    await stop_event.wait()
-    await client.disconnect()
-    VOICE_CLIENT = None
-    CUR_CHANNEL = None
-    AUDIO_FILE = None
-
-
-@shart.command()
-async def stop(ctx):
-    global VOICE_CLIENT
-    if VOICE_CLIENT is None:
-        return
-
-    client = VOICE_CLIENT
-    VOICE_CLIENT = None
-
-    client.stop()
-    await client.disconnect()
-    await ctx.message.add_reaction('🆗')
+        await stop_event.wait()
+        await client.disconnect()
+        self._voice_client = None
+        self._cur_channel = None
+        self._audio_file = None
 
 
 def setup(bot):
-    bot.add_command(sweetland)
-    bot.add_command(shart)
+    bot.add_cog(AudioPlayer())
