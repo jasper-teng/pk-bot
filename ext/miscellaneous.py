@@ -106,6 +106,11 @@ class Images(commands.Cog):
     async def er(self, ctx):
         """ presenting to the emergency room """
         await self.send_image(ctx, 'ext/lormaigai.jpg')
+    
+    @commands.command()
+    async def knobs(self, ctx):
+        """ what's wiggling """
+        await self.send_image(ctx, 'ext/knobs.jpg')
 
 
 class BreadGacha(commands.Cog, name='Bread gacha'):
