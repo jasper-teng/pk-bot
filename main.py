@@ -15,6 +15,7 @@ intents.members = True
 bot = commands.Bot(command_prefix='-', intents=intents)
 extensions = [
     'ext.audioplayer',
+    'ext.cv',
     'ext.miscellaneous',
     # 'ext.mangadex',
     'ext.sdvxin',
@@ -34,6 +35,8 @@ async def reload(ctx, *args):
             # silently ignore extensions not present
             if arg in bot.extensions:
                 bot.reload_extension(arg)
+            elif f'ext.{arg}' in bot.extensions:
+                bot.reload_extension(f'ext.{arg}')
 
     print('Reloaded module(s).')
     await ctx.message.add_reaction('🆗')
@@ -42,7 +45,7 @@ async def reload(ctx, *args):
 @bot.listen('on_command_error')
 async def error_handler(ctx, err):
     if not isinstance(err, commands.CommandNotFound):
-        tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=3))
+        tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=2))
         await ctx.message.add_reaction('⛔')
         await ctx.reply(f'{type(err).__name__}: {err}\nTraceback: ```{tb}```', delete_after=10)
 
