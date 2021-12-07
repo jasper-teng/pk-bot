@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 import time
 
 from discord import Embed
@@ -116,9 +115,8 @@ async def update_songs(full_check=False):
 
     current_id = max([int(sid) for sid in music_db], default=-1) + 1
     if music_db:
-        id_list, data_list = zip(*music_db.items())
+        _, data_list = zip(*music_db.items())
     else:
-        id_list = []
         data_list = []
     for song_data in reversed(new_data):
         try:
@@ -136,7 +134,7 @@ async def update_songs(full_check=False):
     return new_data
 
 
-async def update_score(msg, sdvx_id):
+async def update_score(msg, sdvx_id, preview=False):
     # Load config info
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
@@ -251,7 +249,7 @@ async def update_score(msg, sdvx_id):
                         'timestamp': timestamp
                     }
 
-    new_entries = 0
+    new_entries = []
     for key, data in scores.items():
         prev_data = player_db['scores'].get(key)
         if prev_data is None or data['clear_mark'] != prev_data['clear_mark'] or data['score'] != prev_data['score']:
@@ -261,16 +259,36 @@ async def update_score(msg, sdvx_id):
             else:
                 player_db['updated_scores'][key] = {'clear_mark': None, 'score': 0}
             player_db['scores'][key] = data
-            new_entries += 1
+            new_entries.append(key)
+
+    new_new_entries = []
+    for key in new_entries:
+        sid, diff = key.split('|')
+        sdata = song_db[sid]
+        if diff == '0':
+            diff = 'NOV'
+        elif diff == '1':
+            diff = 'ADV'
+        elif diff == '2':
+            diff = 'EXH'
+        elif diff == '3':
+            diff = 'MXM'
+        else:
+            diff = sdata['diff4_name']
+        new_new_entries.append(f'{sdata["song_name"]} [{diff}]')
+    new_entries = new_new_entries
 
     # Save data
     if new_entries:
-        with safe_open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'w', encoding='utf-8') as f:
-            json.dump(player_db, f)
-        if sdvx_id not in sdvx_id_list:
-            sdvx_id_list.append(sdvx_id)
+        if not preview:
+            with safe_open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'w', encoding='utf-8') as f:
+                json.dump(player_db, f)
+            if sdvx_id not in sdvx_id_list:
+                sdvx_id_list.append(sdvx_id)
 
-        print(f'<Scraper> {new_entries} new entry(s) saved to {sdvx_id}.json.')
+            print(f'<Scraper> {len(new_entries)} new entry(s) saved to {sdvx_id}.json.')
+        else:
+            print(f'<Scraper> {len(new_entries)} new entry(s) found for {sdvx_id}.')
     else:
         print(f'<Scraper> No new entries found for {sdvx_id}.')
     completion_status[sdvx_id] = True
@@ -284,11 +302,11 @@ async def update_score(msg, sdvx_id):
     await session.close()
     return {
         'skipped': unsaved_songs,
-        'new_count': new_entries
+        'new_entry': new_entries
     }
 
 
-async def update_message(msg, sdvx_id, status, skipped_songs=None):
+async def update_message(msg, sdvx_id, status):
     texts = []
     if sdvx_id not in status:
         texts.append(sdvx_id)
