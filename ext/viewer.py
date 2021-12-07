@@ -43,19 +43,25 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         stored_id = self._assoc_obj.get(str(ctx.author.id))
         if sdvxid is None:
             if stored_id is None:
-                embed = Embed(title='SDVX score scraper', description='You haven\'t registered a SDVX ID yet.', delete_after=10)
+                embed = Embed(title='SDVX score scraper',
+                              description='You haven\'t registered a SDVX ID yet.',
+                              delete_after=10)
                 await ctx.reply(embed=embed)
             else:
-                embed = Embed(title='SDVX score scraper', description=f'Your registered SDVX ID is {stored_id}.')
+                embed = Embed(title='SDVX score scraper',
+                              description=f'Your registered SDVX ID is {stored_id}.')
                 await ctx.reply(embed=embed)
         else:
             validatedid = scraper.is_sdvx_id(sdvxid)
             if not validatedid:
-                embed = Embed(title='SDVX score scraper', description=f'{sdvxid} isn\'t a valid SDVX ID.', delete_after=10)
+                embed = Embed(title='SDVX score scraper',
+                              description=f'{sdvxid} isn\'t a valid SDVX ID.',
+                              delete_after=10)
                 await ctx.reply(embed=embed)
             else:
                 self._assoc_obj[str(ctx.author.id)] = validatedid
-                embed = Embed(title='SDVX score scraper', description=f'Your registered SDVX ID is now {validatedid}.')
+                embed = Embed(title='SDVX score scraper',
+                              description=f'Your registered SDVX ID is now {validatedid}.')
                 await ctx.reply(embed=embed)
                 with open(ASSOC_JSON, 'w') as f:
                     json.dump(self._assoc_obj, f)
@@ -91,7 +97,9 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         cur_time = time.localtime()
         time_str = time.strftime('%Y-%m-%d %H:%M:%S', cur_time)
 
-        embed = Embed(title='SDVX score scraper', description=f'Automated score update initiated at {time_str}{"" if not is_preview else " (PREVIEW mode)"}.')
+        embed = Embed(title='SDVX score scraper',
+                      description=f'Automated score update initiated at '
+                                  f'{time_str}{"" if not is_preview else " (PREVIEW mode)"}.')
         message = await ctx.send(embed=embed)
         sdvx_id = self._assoc_obj.get(str(ctx.author.id))
 
@@ -106,10 +114,14 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
 
         if not is_preview:
             subprocess.call('git add scores/.', stdout=DEVNULL, cwd=VIEWER_DIR)
-            subprocess.call(f'git commit scores/. -m "automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
+            subprocess.call(f'git commit scores/. -m '
+                            f'"automated score update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"',
+                            stdout=DEVNULL, cwd=VIEWER_DIR)
             subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=VIEWER_DIR)
 
-        desc = f'Automated score update finished. {len(output["new_entry"])} new {"entry" if len(output["new_entry"]) == 1 else "entries"} {"saved" if not is_preview else "found"}.'
+        desc = (f'Automated score update finished. '
+                f'{len(output["new_entry"])} new {"entry" if len(output["new_entry"]) == 1 else "entries"} '
+                f'{"saved" if not is_preview else "found"}.')
         if is_preview and len(output["new_entry"]) > 0:
             desc += '\n\n' + 'New entries to be added:'
             for sstr in output['new_entry']:
@@ -134,7 +146,8 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         """ Updates the song database in the viewer. """
         if self._is_processing:
             await ctx.message.add_reaction('⛔')
-            await ctx.send(f'Please wait until the currently running process ({self._process_count}) finishes.', delete_after=10)
+            await ctx.send(f'Please wait until the currently running process ({self._process_count}) finishes.',
+                           delete_after=10)
             return
         self._is_processing = PROCESS_SONG
 
@@ -142,7 +155,8 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         cur_time = time.localtime()
         time_str = time.strftime('%Y-%m-%d %H:%M:%S', cur_time)
 
-        embed = Embed(title='SDVX score scraper', description=f'Automated song database update initiated at {time_str}.')
+        embed = Embed(title='SDVX score scraper',
+                      description=f'Automated song database update initiated at {time_str}.')
         message = await ctx.send(embed=embed)
 
         try:
@@ -151,7 +165,9 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
             self._is_processing = 0
             raise e
 
-        subprocess.call(f'git commit song_db.json -m "automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"', stdout=DEVNULL, cwd=VIEWER_DIR)
+        subprocess.call(f'git commit song_db.json -m '
+                        f'"automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"',
+                        stdout=DEVNULL, cwd=VIEWER_DIR)
         subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=VIEWER_DIR)
 
         if new_songs:

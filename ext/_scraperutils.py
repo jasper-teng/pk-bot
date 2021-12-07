@@ -66,6 +66,7 @@ async def fetch_page(session, url, use_post=False, **kwargs):
             continue
         else:
             exception_happened = False
+    # noinspection PyUnboundLocalVariable
     return_val = BeautifulSoup(await r.text(encoding='shift-jis'), 'html5lib')
 
     if session_was_none:
@@ -91,12 +92,12 @@ async def login_routine(user_id, user_pw):
     csrf_token = csrf_token_element['value']
 
     # Send login request
-    r = await s.post(K_LOGIN_ENDPOINT,
-                     data={
-                         'userId': user_id,
-                         'password': user_pw,
-                         'csrfmiddlewaretoken': csrf_token
-                     })
+    await s.post(K_LOGIN_ENDPOINT,
+                 data={
+                     'userId': user_id,
+                     'password': user_pw,
+                     'csrfmiddlewaretoken': csrf_token
+                 })
 
     return s
 

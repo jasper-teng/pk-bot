@@ -21,8 +21,8 @@ EXTRA_DIFF_SUFFIX = ['', 'i', 'g', 'h', 'v']
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
 
-with open('ext/sdvxin_db.json', 'r') as f:
-    song_db = json.load(f)
+with open('ext/sdvxin_db.json', 'r') as db:
+    song_db = json.load(db)
 
 
 class SdvxInLinker(commands.Cog, name='sdvx.in'):
@@ -86,12 +86,12 @@ class SdvxInLinker(commands.Cog, name='sdvx.in'):
             raise IndexError('Song data missing required fields (title, artist, levels).')
 
         sd = {
-            'title'     : d['title'],
-            'artist'    : d['artist'],
-            'levels'    : d['levels'],
-            'alt_title' : d.get('alt_title', []),
+            'title': d['title'],
+            'artist': d['artist'],
+            'levels': d['levels'],
+            'alt_title': d.get('alt_title', []),
             'extra_diff': d.get('extra_diff', 0),
-            'version'   : d.get('version', [song_id[:2], ''])
+            'version': d.get('version', [song_id[:2], ''])
         }
 
         song_db[song_id] = sd
@@ -195,7 +195,9 @@ async def send_result(ctx, song_id):
 
     if d['levels'][3] != 0:
         diff_names[3] = EXTRA_DIFF_NAMES[d['extra_diff']]
-        urls[3] = '/'.join([BASE_DOMAIN, d['version'][1] or d['version'][0], song_id + EXTRA_DIFF_SUFFIX[d['extra_diff']] + '.htm'])
+        urls[3] = '/'.join([BASE_DOMAIN,
+                            d['version'][1] or d['version'][0],
+                            song_id + EXTRA_DIFF_SUFFIX[d['extra_diff']] + '.htm'])
 
     links = []
     for dn, lv, url in zip(diff_names, filter(None, d['levels']), urls):

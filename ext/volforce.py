@@ -75,8 +75,6 @@ async def vf(ctx, *args):
         'clear_mark': None,
         'mode': 'SCORE'
     }
-    embed_title = ''
-    embed_desc = ''
 
     # separate args
     for arg in args:

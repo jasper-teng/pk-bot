@@ -59,7 +59,9 @@ async def chapter_list(ctx, manga_id, page=1):
     out = [f'Page {page} of {math.ceil(result["total"] / 10)}', '']
 
     for chapter in result['results']:
-        out.append(f'V.{chapter["data"]["attributes"]["volume"]} C.{chapter["data"]["attributes"]["chapter"]} {chapter["data"]["attributes"]["title"]}')
+        out.append(f'V.{chapter["data"]["attributes"]["volume"]} '
+                   f'C.{chapter["data"]["attributes"]["chapter"]} '
+                   f'{chapter["data"]["attributes"]["title"]}')
         out.append(f'    ID: {chapter["data"]["id"]}')
 
     await ctx.send('```' + '\n'.join(out) + '```')

@@ -160,9 +160,12 @@ class BreadGacha(commands.Cog, name='Bread gacha'):
             f'-bread has been used {self._bread_counter[0]} times today'
         ]
         if self._bread_counter[0] > 0:
-            texts.append(f'out of those, {self._bread_counter[1]} ({self._bread_counter[1]/self._bread_counter[0]*100:.2f}%) of them were jasper')
-            texts.append(f'out of those, {self._bread_counter[3]} ({self._bread_counter[3]/self._bread_counter[0]*100:.2f}%) of them were gartic jasper')
-            texts.append(f'and {self._bread_counter[2]} ({self._bread_counter[2]/self._bread_counter[0]*100:.2f}%) of them were SSR jasper')
+            texts.append(f'out of those, {self._bread_counter[1]} '
+                         f'({self._bread_counter[1]/self._bread_counter[0]*100:.2f}%) of them were jasper')
+            texts.append(f'out of those, {self._bread_counter[3]} '
+                         f'({self._bread_counter[3]/self._bread_counter[0]*100:.2f}%) of them were gartic jasper')
+            texts.append(f'and {self._bread_counter[2]} '
+                         f'({self._bread_counter[2]/self._bread_counter[0]*100:.2f}%) of them were SSR jasper')
         await ctx.reply('\n'.join(texts))
     
         if member_list:
