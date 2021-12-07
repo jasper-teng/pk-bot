@@ -111,6 +111,11 @@ class Images(commands.Cog):
     async def knobs(self, ctx):
         """ what's wiggling """
         await self.send_image(ctx, 'ext/knobs.jpg')
+    
+    @commands.command()
+    async def foot(self, ctx):
+        """ Theorem: I have a big mouth | Proof: """
+        await self.send_image(ctx, 'ext/foot.png')
 
 
 class BreadGacha(commands.Cog, name='Bread gacha'):
