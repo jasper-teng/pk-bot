@@ -185,7 +185,21 @@ async def acs(ctx):
     await ctx.reply('tgbtg tbiytb')
 
 
+@commands.command()
+async def josh(ctx):
+    """ tastes quite bad """
+    await ctx.reply('https://cdn.discordapp.com/attachments/648560458420322306/820551483019100160/evans.mp4')
+
+
+@commands.command(aliases=['egg'])
+async def taylorswift(ctx):
+    """ someday, i'll be living in a big old city """
+    await ctx.reply('https://va.media.tumblr.com/tumblr_mhd8usvaeJ1qmjzvz.mp4')
+
+
 def setup(bot):
     bot.add_cog(Images())
     bot.add_cog(BreadGacha())
     bot.add_command(acs)
+    bot.add_command(josh)
+    bot.add_command(taylorswift)
