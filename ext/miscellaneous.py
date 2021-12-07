@@ -9,6 +9,7 @@ from discord.utils import escape_markdown
 class Images(commands.Cog):
     def __init__(self):
         self._denzel = 0
+        self._hydrate = 0
 
     @staticmethod
     async def send_image(ctx, img_path):
@@ -51,7 +52,11 @@ class Images(commands.Cog):
     @commands.command()
     async def hydrate(self, ctx):
         """ friendly reminder to drink a cup of water """
-        await self.send_image(ctx, 'ext/hydrate.jpg')
+        if self._hydrate:
+            await self.send_image(ctx, 'ext/hydrate2.jpg')
+        else:
+            await self.send_image(ctx, 'ext/hydrate1.jpg')
+        self._hydrate = 1 - self._hydrate
     
     @commands.command()
     async def goodbye(self, ctx):
