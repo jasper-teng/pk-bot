@@ -30,6 +30,7 @@ class ComputerVision(commands.Cog):
         self._good_match_threshold = 75
         self._lowe_test_threshold = 0.7
         self._name_allowlist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!?#&*-'
+        self._tess_params = f'--psm 7 -c tessedit_char_whitelist={self._name_allowlist}'
 
     @commands.command()
     async def cvtest(self, ctx):
@@ -151,8 +152,7 @@ class ComputerVision(commands.Cog):
         card_name_out = np.ones((1075, 1075), np.uint8) * 255
         # Is there a better way to write this?
         card_name_out[488:588, 268:806] = card_name_bw
-        card_name_val = pytesseract.image_to_string(card_name_out,
-                                                    config=f'-c tessedit_char_whitelist={self._name_allowlist}')
+        card_name_val = pytesseract.image_to_string(card_name_out, config=self._tess_params)
         card_name_val = card_name_val.strip()
 
         # Slot in all the cropped bits into the summarized image
