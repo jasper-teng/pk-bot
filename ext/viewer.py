@@ -75,6 +75,8 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         - Profile does not exist
         - Score data is not set to be publicly visible
         - Website is down for maintenance
+
+        Provide 'preview' as an argument to scrape data but not save it ("dry run").
         """
         is_preview = 'preview' in args
 
