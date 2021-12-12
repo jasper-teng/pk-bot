@@ -61,7 +61,6 @@ class ComputerVision(commands.Cog):
             )
             for match in urls:
                 url = match.group()
-                print(url)
                 try:
                     in_img = cv2.imdecode(np.frombuffer(requests.get(url).content, np.uint8), cv2.IMREAD_COLOR)
                 except Exception:
@@ -77,7 +76,11 @@ class ComputerVision(commands.Cog):
             return
 
         # Resize image to reasonable dimensions
-        in_img = cv2.resize(in_img, (1200, in_img.shape[0] * 1200 // in_img.shape[1]))
+        while in_img.shape[1] > 2400:
+            # Doing this apparently removes induced Moire patterns? idk
+            in_img = cv2.resize(in_img, (0, 0), fx=0.5, fy=0.5, interpolation=cv2.INTER_LANCZOS4)
+        in_img = cv2.resize(in_img, (0, 0), fx=1200/in_img.shape[1],
+                            fy=1200/in_img.shape[1], interpolation=cv2.INTER_LANCZOS4)
         key, desc = self._sift.detectAndCompute(cv2.cvtColor(in_img, cv2.COLOR_BGR2GRAY), None)
 
         # Match features with the desired matcher
@@ -132,7 +135,7 @@ class ComputerVision(commands.Cog):
                 dw, dh = 48, 46
             # Resize to fit template
             digit = score_bw[-dh:, cur_x:cur_x + dw]
-            digit = cv2.resize(digit, (52, dh * 52 // dw))
+            digit = cv2.resize(digit, (0, 0), fx=52/dw, fy=52/dw)
             cur_x += dw
 
             # Nothing too fancy, just using template matching
@@ -174,6 +177,11 @@ class ComputerVision(commands.Cog):
             reply += f' and the player name is {card_name_val}'
         reply += '.'
         await ctx.reply(reply, file=File(outbuf, 'output.png'))
+
+        if ctx.guild is None:
+            _, outbuf = cv2.imencode('.png', card_name_out)
+            outbuf = io.BytesIO(outbuf)
+            await ctx.send(file=File(outbuf, 'card_name.png'))
         return
 
 
