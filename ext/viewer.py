@@ -122,8 +122,11 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         desc = (f'Automated score update finished. '
                 f'{len(output["new_entry"])} new {"entry" if len(output["new_entry"]) == 1 else "entries"} '
                 f'{"saved" if not is_preview else "found"}.')
-        if is_preview and len(output["new_entry"]) > 0:
-            desc += '\n\n' + 'New entries to be added:'
+        if len(output["new_entry"]) > 0:
+            if is_preview:
+                desc += '\n\n' + 'New entries to be added:'
+            else:
+                desc += '\n\n' + 'New entries added:'
             for sstr in output['new_entry']:
                 desc += f'\n- {sstr}'
         if len(output['skipped']) > 0:
