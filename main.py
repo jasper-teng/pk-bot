@@ -18,6 +18,7 @@ extensions = [
     'ext.cv',
     'ext.miscellaneous',
     # 'ext.mangadex',
+    'ext.scheduler',
     'ext.sdvxin',
     'ext.viewer',
     'ext.volforce'
