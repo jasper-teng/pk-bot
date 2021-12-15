@@ -30,6 +30,7 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         self._process_count = 0
         self._score_queued = asyncio.Event()
         self._score_queued.set()
+        self._max_output_lines = 15
 
     @commands.group()
     async def viewer(self, ctx):
@@ -129,8 +130,11 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
                 desc += '\n\n' + 'New entries to be added:'
             else:
                 desc += '\n\n' + 'New entries added:'
-            for sstr in output['new_entry']:
+            for sstr in output['new_entry'][:self._max_output_lines]:
                 desc += f'\n- {sstr}'
+            if len(output['new_entry']) > self._max_output_lines:
+                entry_word = 'entry' if (len(output['new_entry']) == self._max_output_lines + 1) else 'entries'
+                desc += f'... ({len(output["new_entry"]) - self._max_output_lines} {entry_word} omitted)'
         if len(output['skipped']) > 0:
             desc += '\n\n' + 'While scraping data, the following song(s) are missing from the database:'
             for sn, sa in output['skipped']:
