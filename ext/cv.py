@@ -143,6 +143,8 @@ class ComputerVision(commands.Cog):
                 match_result = cv2.matchTemplate(digit, self._nums, cv2.TM_CCOEFF_NORMED)
                 topleft_pos = cv2.minMaxLoc(match_result)[3]
                 score_val = 10 * score_val + int(topleft_pos[0] / 52 + 0.5)  # rounding, not flooring
+                if score_val > 10_000_000:
+                    score_val %= 10_000_000
 
             # Try to read card name (sharpen filter ftw)
             card_name_bw = cv2.cvtColor(card_name, cv2.COLOR_BGR2GRAY)
