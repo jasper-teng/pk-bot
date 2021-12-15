@@ -22,105 +22,105 @@ class Images(commands.Cog):
     @commands.command()
     async def notthemxm(self, ctx):
         """ Holy shit nice score-- """
-        await self.send_image(ctx, 'ext/notthemxm.png')
+        await self.send_image(ctx, 'ext/imgs/notthemxm.png')
     
     @commands.command()
     async def ligma(self, ctx):
         """ Who the hell is Steve Jobs?! """
-        await self.send_image(ctx, 'ext/ligma.jpg')
+        await self.send_image(ctx, 'ext/imgs/ligma.jpg')
     
     @commands.command()
     async def imperial(self, ctx):
         """ im the worst new imperial """
-        await self.send_image(ctx, 'ext/imperial.png')
+        await self.send_image(ctx, 'ext/imgs/imperial.png')
     
     @commands.command()
     async def gaming(self, ctx):
         """ now that's what I call gaming """
-        await self.send_image(ctx, 'ext/gaming.jpg')
+        await self.send_image(ctx, 'ext/imgs/gaming.jpg')
     
     @commands.command()
     async def jasper(self, ctx):
         """ im allergic to jasper's shit """
-        await self.send_image(ctx, 'ext/jasper.png')
+        await self.send_image(ctx, 'ext/imgs/jasper.png')
     
     @commands.command(aliases=['18', '🔞'])
     async def horney(self, ctx):
         """ acab """
-        await self.send_image(ctx, 'ext/horney.jpg')
+        await self.send_image(ctx, 'ext/imgs/horney.jpg')
     
     @commands.command()
     async def hydrate(self, ctx):
         """ friendly reminder to drink a cup of water """
         if self._hydrate:
-            await self.send_image(ctx, 'ext/hydrate2.jpg')
+            await self.send_image(ctx, 'ext/imgs/hydrate2.jpg')
         else:
-            await self.send_image(ctx, 'ext/hydrate1.jpg')
+            await self.send_image(ctx, 'ext/imgs/hydrate1.jpg')
         self._hydrate = 1 - self._hydrate
     
     @commands.command()
     async def goodbye(self, ctx):
         """ you're so sucks. goodbye. """
-        await self.send_image(ctx, 'ext/goodbye.png')
+        await self.send_image(ctx, 'ext/imgs/goodbye.png')
     
     @commands.command()
     async def denzel(self, ctx):
         """ has anyone ever beat you up before """
         if self._denzel:
-            await self.send_image(ctx, 'ext/denzel2.png')
+            await self.send_image(ctx, 'ext/imgs/denzel2.png')
         else:
-            await self.send_image(ctx, 'ext/denzel1.png')
+            await self.send_image(ctx, 'ext/imgs/denzel1.png')
         self._denzel = 1 - self._denzel
     
     @commands.command()
     async def jbl(self, ctx):
         """ LOVE """
-        await self.send_image(ctx, 'ext/jbl.png')
+        await self.send_image(ctx, 'ext/imgs/jbl.png')
     
     @commands.command()
     async def candii(self, ctx):
         """ sapphirehime """
-        await self.send_image(ctx, 'ext/gnome.png')
+        await self.send_image(ctx, 'ext/imgs/gnome.png')
     
     @commands.command()
     async def israel(self, ctx):
         """ whats wrong with u israel """
-        await self.send_image(ctx, 'ext/israel.png')
+        await self.send_image(ctx, 'ext/imgs/israel.png')
     
     @commands.command()
     async def plywood(self, ctx):
         """ this is an absolute win """
-        await self.send_image(ctx, 'ext/plywood.jpg')
+        await self.send_image(ctx, 'ext/imgs/plywood.jpg')
     
     @commands.command()
     async def emma(self, ctx):
         """ altona good chart ok """
-        await self.send_image(ctx, 'ext/emma.png')
+        await self.send_image(ctx, 'ext/imgs/emma.png')
     
     @commands.command()
     async def sexualtension(self, ctx):
         """ Sexual Tension On The PK Server . """
-        await self.send_image(ctx, 'ext/pktension.png')
+        await self.send_image(ctx, 'ext/imgs/pktension.png')
     
     @commands.command()
     async def piu(self, ctx):
         """ why the fuck am i playing this game """
-        await self.send_image(ctx, 'ext/piu.png')
+        await self.send_image(ctx, 'ext/imgs/piu.png')
     
     @commands.command()
     async def er(self, ctx):
         """ presenting to the emergency room """
-        await self.send_image(ctx, 'ext/lormaigai.jpg')
+        await self.send_image(ctx, 'ext/imgs/lormaigai.jpg')
     
     @commands.command()
     async def knobs(self, ctx):
         """ what's wiggling """
-        await self.send_image(ctx, 'ext/knobs.jpg')
+        await self.send_image(ctx, 'ext/imgs/knobs.jpg')
     
     @commands.command()
     async def foot(self, ctx):
         """ Theorem: I have a big mouth | Proof: """
-        await self.send_image(ctx, 'ext/foot.png')
+        await self.send_image(ctx, 'ext/imgs/foot.png')
 
 
 class BreadGacha(commands.Cog, name='Bread gacha'):
@@ -139,17 +139,17 @@ class BreadGacha(commands.Cog, name='Bread gacha'):
         self._bread_counter[0] += 1
         if random.random() < 0.01:
             self._bread_counter[2] += 1
-            await ctx.reply(file=File('ext/bread3.png'))
+            await ctx.reply(file=File('ext/imgs/bread3.png'))
             with open('ext/ssr_pulls.txt', 'a') as f:
                 f.write(f'{ctx.author.id}\n')
         elif random.random() < 0.11:
             self._bread_counter[1] += 1
-            await ctx.reply(file=File('ext/bread2.png'))
+            await ctx.reply(file=File('ext/imgs/bread2.png'))
         elif random.random() < 0.21:
             self._bread_counter[3] += 1
-            await ctx.reply(file=File('ext/bread4.png'))
+            await ctx.reply(file=File('ext/imgs/bread4.png'))
         else:
-            await ctx.reply('bread craftsingle banana craftsingle', file=File('ext/bread.png'))
+            await ctx.reply('bread craftsingle banana craftsingle', file=File('ext/imgs/bread.png'))
     
     @commands.command()
     async def breadstats(self, ctx):
