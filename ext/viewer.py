@@ -134,7 +134,7 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
                 desc += f'\n- {sstr}'
             if len(output['new_entry']) > self._max_output_lines:
                 entry_word = 'entry' if (len(output['new_entry']) == self._max_output_lines + 1) else 'entries'
-                desc += f'... ({len(output["new_entry"]) - self._max_output_lines} {entry_word} omitted)'
+                desc += f'\n... ({len(output["new_entry"]) - self._max_output_lines} {entry_word} omitted)'
         if len(output['skipped']) > 0:
             desc += '\n\n' + 'While scraping data, the following song(s) are missing from the database:'
             for sn, sa in output['skipped']:
