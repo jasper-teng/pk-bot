@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import requests
 import time
 import urllib.parse
@@ -12,7 +13,7 @@ class Scheduler(commands.Cog):
     def __init__(self, bot):
         # load saved data
         self._bot = bot
-        self._db_path = 'ext/scheduler_db.json'
+        self._db_path = os.path.join('ext', 'scheduler_db.json')
         try:
             with open(self._db_path) as f:
                 self._db = json.load(f)
@@ -42,7 +43,7 @@ class Scheduler(commands.Cog):
                          headers={'User-Agent': 'Mozilla/5.0 (X11; CrOS x86_64 8172.45.0) '
                                                 'AppleWebKit/537.36 (KHTML, like Gecko) '
                                                 'Chrome/51.0.2704.64 Safari/537.36'})
-        soup = BeautifulSoup(r.text)
+        soup = BeautifulSoup(r.text, 'html5lib')
         chapters = soup.select('.subtitle')
 
         if last_ch is None:
@@ -69,19 +70,17 @@ class Scheduler(commands.Cog):
             channel = await self._bot.fetch_user(82495095084941312)
             await channel.send(embed=embed)
 
-        self._db['doratama:last_ch'] = last_ch
+        if desc or 'doratama:last_ch' not in self._db:
+            self._db['doratama:last_ch'] = last_ch
+            with open(self._db_path, 'w') as f:
+                    json.dump(self._db, f)
 
     @doratama.before_loop
     async def doratama_before(self):
         # ensure task runs on the hour
         cur_time = time.time()
-        secs_to_wait = (cur_time // 3600 + 1) * 3600
+        secs_to_wait = (cur_time // 3600 + 1) * 3600 - cur_time
         await asyncio.sleep(secs_to_wait)
-
-    @doratama.after_loop
-    async def doratama_after(self):
-        with open(self._db_path, 'w') as f:
-            json.dump(self._db, f)
 
 
 def setup(bot):
