@@ -121,6 +121,11 @@ class Images(commands.Cog):
     async def foot(self, ctx):
         """ Theorem: I have a big mouth | Proof: """
         await self.send_image(ctx, 'ext/imgs/foot.png')
+    
+    @commands.command()
+    async def foot(self, ctx):
+        """ why does he look like rave """
+        await self.send_image(ctx, 'ext/imgs/rave.jpg')
 
 
 class BreadGacha(commands.Cog, name='Bread gacha'):
