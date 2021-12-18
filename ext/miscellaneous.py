@@ -123,7 +123,7 @@ class Images(commands.Cog):
         await self.send_image(ctx, 'ext/imgs/foot.png')
     
     @commands.command()
-    async def foot(self, ctx):
+    async def rave(self, ctx):
         """ why does he look like rave """
         await self.send_image(ctx, 'ext/imgs/rave.jpg')
 
