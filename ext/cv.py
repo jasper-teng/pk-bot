@@ -4,7 +4,7 @@ import re
 import requests
 import cv2
 import numpy as np
-import pytesseract
+# import pytesseract
 from discord import File, DeletedReferencedMessage
 from discord.ext import commands
 
@@ -147,19 +147,19 @@ class ComputerVision(commands.Cog):
                     score_val %= 10_000_000
 
             # Try to read card name (sharpen filter ftw)
-            card_name_bw = cv2.cvtColor(card_name, cv2.COLOR_BGR2GRAY)
-            card_name_bw = cv2.filter2D(card_name_bw, -1, np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]))
-            card_name_bw = cv2.resize(card_name_bw, (0, 0), fx=4, fy=4)
-            _, card_name_bw = cv2.threshold(card_name_bw, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-            card_name_bw = card_name_bw[:, :538]
+            # card_name_bw = cv2.cvtColor(card_name, cv2.COLOR_BGR2GRAY)
+            # card_name_bw = cv2.filter2D(card_name_bw, -1, np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]))
+            # card_name_bw = cv2.resize(card_name_bw, (0, 0), fx=4, fy=4)
+            # _, card_name_bw = cv2.threshold(card_name_bw, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+            # card_name_bw = card_name_bw[:, :538]
             # Slap the image in the middle of a big blank canvas
             #   otherwise Tesseract doesn't play nice
             # The canvas size is arbitrary tbh
-            card_name_out = np.ones((1075, 1075), np.uint8) * 255
+            # card_name_out = np.ones((1075, 1075), np.uint8) * 255
             # Is there a better way to write this?
-            card_name_out[488:588, 268:806] = card_name_bw
-            card_name_val = pytesseract.image_to_string(card_name_out, config=self._tess_params)
-            card_name_val = card_name_val.strip()
+            # card_name_out[488:588, 268:806] = card_name_bw
+            # card_name_val = pytesseract.image_to_string(card_name_out, config=self._tess_params)
+            # card_name_val = card_name_val.strip()
 
             # Slot in all the cropped bits into the summarized image
             img = np.zeros((295, 475, 3), np.uint8)
@@ -176,8 +176,8 @@ class ComputerVision(commands.Cog):
             outbuf = io.BytesIO(outbuf)
             reply = f'{len(good_points)} good feature matches.\n'
             reply += f'I think the score is {score_val}'
-            if card_name_val:
-                reply += f' and the player name is {card_name_val}'
+            # if card_name_val:
+                # reply += f' and the player name is {card_name_val}'
             reply += '.'
             await ctx.reply(reply, file=File(outbuf, 'output.png'))
 
