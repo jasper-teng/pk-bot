@@ -19,8 +19,8 @@ EXTRA_DIFF_SUFFIX = ['', '', 'i', 'g', 'h', 'v']
 
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
-
-DB = pandas.read_json('../sdvx-db/db.json', orient='index')
+DB_PATH = os.path.join('..', 'sdvx-db', 'db.json')
+DB = pandas.read_json(DB_PATH, orient='index')
 
 
 class SdvxInLinker(commands.Cog, name='sdvx.in'):
@@ -68,6 +68,8 @@ async def _search(ctx, query, list_all=False):
     # Search database
     result = collections.defaultdict(list)
     for song_id in DB.index:
+        if DB.loc[song_id].sdvxin_id == '':
+            continue
         strings = get_aliases(song_id)
 
         result['ratio'].append((max([fuzz.ratio(query, s) for s in strings]), song_id))
@@ -145,6 +147,11 @@ def get_aliases(song_id):
     if data.song_name.isascii():
         strings.append(re.sub('[^a-zA-Z0-9]', ' ', data.song_name))
     return [s.lower() for s in strings]
+
+
+def refresh_database():
+    global DB
+    DB = pandas.read_json(DB_PATH, orient='index')
 
 
 def setup(bot):
