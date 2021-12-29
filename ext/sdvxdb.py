@@ -53,7 +53,8 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         song_id = int(song_id)
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if res.shape[0] == 1:
-            embed = Embed(title=f'Song with ID {sdvxin_id} already exists!')
+            embed = Embed(title='SDVX database handler',
+                          desc=f'Song with ID {sdvxin_id} already exists!')
             embed.set_author(name=f'Results for ID query "{sdvxin_id}":')
             await ctx.send(embed=embed)
             return
@@ -65,6 +66,24 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         embed = Embed(title='SDVX database handler',
                       desc=f'New song entry linked (ID {sdvxin_id}).')
         await ctx.send(embed=embed)
+
+    @svdb.command()
+    @commands.has_role(ROLE_ID)
+    async def unlinked(self):
+        """ Finds all song entries that are not linked to a sdvx.in entry. """
+        songs = DB.loc[DB['sdvxin_id'] == '']
+        if len(songs) == 0:
+            embed = Embed(title='SDVX database handler',
+                          desc='All songs are linked!')
+            embed.set_author(name='Missing sdvx.in IDs:')
+        else:
+            desc = []
+            for song in songs.itertuples():
+                desc.append(f'- {song.song_name} / {song.song_artist} (ID {song.Index})')
+            embed = Embed(title='SDVX database handler',
+                          desc='\n'.join(desc))
+            embed.set_author(name='Missing sdvx.in IDs:')
+            await ctx.send(embed=embed)
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
