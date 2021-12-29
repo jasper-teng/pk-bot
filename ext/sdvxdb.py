@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
-
+DB_DIR = '../sdvx-db/'
 DB = pandas.read_json('../sdvx-db/db.json')
 
 
@@ -29,59 +29,64 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         cur_time = time.localtime()
         time_str = time.strftime('%Y-%m-%d %H:%M:%S', cur_time)
 
-        embed = Embed(title='SDVX score scraper',
+        embed = Embed(title='SDVX database handler',
                       description=f'Automated song database update initiated at {time_str}.')
         message = await ctx.send(embed=embed)
 
         new_songs = await scraper.update_songs(is_full_update)
 
-        # subprocess.call(f'git commit song_db.json -m '
-        #                 f'"automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"',
-        #                 stdout=DEVNULL, cwd=VIEWER_DIR)
-        # subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=VIEWER_DIR)
-
-        if new_songs:
+        if len(new_songs) > 0:
+            print(f'<SDVXDB> Updated database with scraped data ({len(new_songs)} entry(s)).')
             desc = ['Automated song database update finished. Added the following songs:']
         else:
             desc = ['Automated song database update finished. No new songs added.']
 
         for song_data in new_songs:
             desc.append(f'- {song_data["song_name"]} / {song_data["song_artist"]}')
-        embed = Embed(title='SDVX score scraper', description='\n'.join(desc))
+        embed = Embed(title='SDVX database handler', description='\n'.join(desc))
         await message.edit(embed=embed)
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
     async def link(self, ctx, song_id, sdvxin_id):
+        """ Attaches a sdvx.in ID to a song entry. """
+        song_id = int(song_id)
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if res.shape[0] == 1:
             embed = Embed(title=f'Song with ID {sdvxin_id} already exists!')
             embed.set_author(name=f'Results for ID query "{sdvxin_id}":')
-            embed.set_footer(text='Powered by sdvx.in')
             await ctx.send(embed=embed)
             return
 
         db.loc[song_id].sdvxin_id = sdvxin_id
         save_database()
-        print(f'<SDVXIN> Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
+        print(f'<SDVXDB> Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
 
-        embed = Embed(title=f'New song entry linked (ID {sdvxin_id}).')
-        embed.set_footer(text='Powered by sdvx.in')
+        embed = Embed(title='SDVX database handler',
+                      desc=f'New song entry linked (ID {sdvxin_id}).')
         await ctx.send(embed=embed)
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
     async def commit(self):
-        pass
+        """ Commits changes to the repository. """
+        cur_time = time.localtime()
+        subprocess.call(f'git commit db.json -m '
+                        f'"automated song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"',
+                        stdout=DEVNULL, cwd=DB_DIR)
+        subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=DB_DIR)
+        ctx.msg.add_reaction('🆗')
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
     async def addalias(self, ctx, song_id, new_alias):
+        """ Adds a song title alias for a given song ID. """
+        song_id = int(song_id)
         res = DB.loc[DB['sdvxin_id'] == song_id]
         if res.shape[0] == 0:
-            embed = Embed(title=f'No song with ID {song_id} found!')
+            embed = Embed(title='SDVX database handler',
+                          desc=f'No song with ID {song_id} found!')
             embed.set_author(name=f'Results for ID query "{song_id}":')
-            embed.set_footer(text='Powered by sdvx.in')
             await ctx.send(embed=embed)
             return
 
@@ -92,18 +97,19 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         save_database()
         print(f'<SDVXIN> Added new alias for ID {song_id}.')
 
-        embed = Embed(title=f'Alias "{new_alias}" added for {d["title"]} ({song_id}).')
-        embed.set_footer(text='Powered by sdvx.in')
+        embed = Embed(title='SDVX database handler',
+                      desc=f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({song_id}).')
         await ctx.send(embed=embed)
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
     async def overridefield(self, ctx, sdvxin_id, *, json_string):
+        """ Overwrites fields given a song ID. """
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if res.shape[0] == 0:
-            embed = Embed(title=f'No song with ID {sdvxin_id} found!')
+            embed = Embed(title='SDVX database handler',
+                          desc=f'No song with ID {sdvxin_id} found!')
             embed.set_author(name=f'Results for ID query "{sdvxin_id}":')
-            embed.set_footer(text='Powered by sdvx.in')
             await ctx.send(embed=embed)
             return
 
@@ -117,8 +123,12 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
             song_db.loc[song_id][k] = v
 
         save_database()
-        print(f'<SDVXIN> Overwrote fields {list(d.keys())} in ID {sdvxin_id}.')
+        print(f'<SDVXDB> Overwrote fields {list(d.keys())} in ID {sdvxin_id}.')
 
-        embed = Embed(title=f'Overwrote the following fields in ID {sdvxin_id}.', description=pprint.pformat(d))
-        embed.set_footer(text='Powered by sdvx.in')
+        embed = Embed(title='SDVX database handler',
+                      desc=f'Overwrote the following fields in ID {sdvxin_id}.\n\n' + pprint.pformat(d))
         await ctx.send(embed=embed)
+
+
+def setup(bot):
+    bot.add_cog(SdvxDatabase())
