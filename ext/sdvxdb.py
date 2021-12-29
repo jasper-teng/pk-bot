@@ -29,8 +29,8 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         cur_time = time.localtime()
         time_str = time.strftime('%Y-%m-%d %H:%M:%S', cur_time)
 
-        embed = Embed(title='SDVX database handler',
-                      description=f'Automated song database update initiated at {time_str}.')
+        embed = Embed(desc=f'Automated song database update initiated at {time_str}.')
+        embed.set_author(name='SDVX database handler')
         message = await ctx.send(embed=embed)
 
         new_songs = await scraper.update_songs(is_full_update)
@@ -43,7 +43,8 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
 
         for song_data in new_songs:
             desc.append(f'- {song_data["song_name"]} / {song_data["song_artist"]}')
-        embed = Embed(title='SDVX database handler', description='\n'.join(desc))
+        embed = Embed(desc='\n'.join(desc))
+        embed.set_author(name='SDVX database handler')
         await message.edit(embed=embed)
 
     @svdb.command()
@@ -53,9 +54,9 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         song_id = int(song_id)
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if res.shape[0] == 1:
-            embed = Embed(title='SDVX database handler',
+            embed = Embed(title=f'Results for ID query "{sdvxin_id}":',
                           desc=f'Song with ID {sdvxin_id} already exists!')
-            embed.set_author(name=f'Results for ID query "{sdvxin_id}":')
+            embed.set_author(name='SDVX database handler')
             await ctx.send(embed=embed)
             return
 
@@ -63,8 +64,8 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         save_database()
         print(f'<SDVXDB> Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
 
-        embed = Embed(title='SDVX database handler',
-                      desc=f'New song entry linked (ID {sdvxin_id}).')
+        embed = Embed(desc=f'New song entry linked (ID {sdvxin_id}).')
+        embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 
     @svdb.command()
@@ -73,16 +74,16 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         """ Finds all song entries that are not linked to a sdvx.in entry. """
         songs = DB.loc[DB['sdvxin_id'] == '']
         if len(songs) == 0:
-            embed = Embed(title='SDVX database handler',
+            embed = Embed(title='Missing sdvx.in IDs:',
                           desc='All songs are linked!')
-            embed.set_author(name='Missing sdvx.in IDs:')
+            embed.set_author(name='SDVX database handler')
         else:
             desc = []
             for song in songs.itertuples():
                 desc.append(f'- {song.song_name} / {song.song_artist} (ID {song.Index})')
-            embed = Embed(title='SDVX database handler',
+            embed = Embed(title='Missing sdvx.in IDs:',
                           desc='\n'.join(desc))
-            embed.set_author(name='Missing sdvx.in IDs:')
+            embed.set_author(name='SDVX database handler')
             await ctx.send(embed=embed)
 
     @svdb.command()
@@ -103,9 +104,9 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         song_id = int(song_id)
         res = DB.loc[DB['sdvxin_id'] == song_id]
         if res.shape[0] == 0:
-            embed = Embed(title='SDVX database handler',
+            embed = Embed(title=f'Results for ID query "{song_id}":',
                           desc=f'No song with ID {song_id} found!')
-            embed.set_author(name=f'Results for ID query "{song_id}":')
+            embed.set_author(name='SDVX database handler')
             await ctx.send(embed=embed)
             return
 
@@ -116,8 +117,8 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         save_database()
         print(f'<SDVXIN> Added new alias for ID {song_id}.')
 
-        embed = Embed(title='SDVX database handler',
-                      desc=f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({song_id}).')
+        embed = Embed(desc=f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({song_id}).')
+        embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 
     @svdb.command()
@@ -126,9 +127,9 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         """ Overwrites fields given a song ID. """
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if res.shape[0] == 0:
-            embed = Embed(title='SDVX database handler',
+            embed = Embed(title=f'Results for ID query "{sdvxin_id}":',
                           desc=f'No song with ID {sdvxin_id} found!')
-            embed.set_author(name=f'Results for ID query "{sdvxin_id}":')
+            embed.set_author(name='SDVX database handler')
             await ctx.send(embed=embed)
             return
 
@@ -144,8 +145,8 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         save_database()
         print(f'<SDVXDB> Overwrote fields {list(d.keys())} in ID {sdvxin_id}.')
 
-        embed = Embed(title='SDVX database handler',
-                      desc=f'Overwrote the following fields in ID {sdvxin_id}.\n\n' + pprint.pformat(d))
+        embed = Embed(desc=f'Overwrote the following fields in ID {sdvxin_id}.\n\n' + pprint.pformat(d))
+        embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 
 
