@@ -280,8 +280,8 @@ async def update_score(msg, sdvx_id, preview=False):
         elif diff == '3':
             diff = 'MXM'
         else:
-            diff = sdata['diff4_name']
-        new_new_entries.append(f'{sdata["song_name"]} [{diff}]')
+            diff = INF_NAME[sdata.inf_ver].upper()
+        new_new_entries.append(f'{sdata.song_name} [{diff}]')
     new_entries = new_new_entries
 
     # Save data
