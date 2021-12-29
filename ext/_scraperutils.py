@@ -41,8 +41,9 @@ def get_skill_level(s):
 def get_song_lookup_table(song_db):
     """ Return a reverse lookup table for song name/artist pair. """
     lookup = {}
-    for sid, song_data in song_db.items():
-        sn, sa = song_data['song_name'], song_data['song_artist']
+    for row in song_db.itertuples():
+        sid = row.Index
+        sn, sa = row.song_name, row.song_artist
         lookup[sn, sa] = sid
 
     return lookup

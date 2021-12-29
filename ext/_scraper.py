@@ -1,4 +1,4 @@
-import json
+import pandas
 import os
 import time
 
@@ -17,9 +17,10 @@ K_SCOREURL = 'https://p.eagate.573.jp/game/sdvx/vi/playdata/rival/score.html'
 K_MUSICURL = 'https://p.eagate.573.jp/game/sdvx/vi/music/index.html'
 CLEAR_MARK_TABLE = {'play': 0, 'comp': 1, 'comp_ex': 2, 'uc': 3, 'per': 4}
 REL_PATH = os.path.join('..', 'sdvx-score-viewer')
-SONG_DB_PATH = os.path.join(REL_PATH, 'song_db.json')
+SONG_DB_PATH = os.path.join('..', 'sdvx-db', 'db.json')
 CONFIG_PATH = os.path.join(REL_PATH, 'config.json')
 PROFILE_LIST_PATH = os.path.join(REL_PATH, 'scores', 'profile_list.json')
+INF_NAME = ['', '', 'inf', 'grv', 'hvn', 'vvd']
 
 
 def is_sdvx_id(st):
@@ -46,14 +47,13 @@ def is_sdvx_id(st):
 
 async def update_songs(full_check=False):
     try:
-        with open(SONG_DB_PATH, 'r', encoding='utf-8') as f:
-            music_db = json.load(f)
+        music_db = pandas.read_json(SONG_DB_PATH, orient='index')
     except json.JSONDecodeError:
         print('<Scraper> Database cannot be read. Overwriting.')
-        music_db = {}
+        music_db = pandas.DataFrame()
     except IOError:
         print('<Scraper> Creating new song database file.')
-        music_db = {}
+        music_db = pandas.DataFrame()
     new_data = []
 
     # Get number of pages to crawl through
@@ -76,8 +76,8 @@ async def update_songs(full_check=False):
             [song_name, song_artist] = list(music_info.select_one('.info').stripped_strings)
             diff_info = music_info.select_one('.level')
             diff_dict = {e['class'][0]: int(e.string) for e in diff_info.children if hasattr(e, 'contents')}
-            diffs = [None] * 5
-            diff4_name = None
+            diffs = [0] * 5
+            inf_ver = None
 
             song_in_database = False
             for diff_name, diff in diff_dict.items():
@@ -90,17 +90,24 @@ async def update_songs(full_check=False):
                 elif diff_name == 'mxm':
                     diffs[3] = diff
                 else:
-                    diff4_name = diff_name.upper()
+                    inf_ver = INF_NAME.index(diff_name)
                     diffs[4] = diff
 
             song_data = {
                 'song_name': song_name,
+                'song_name_alt': [],
                 'song_artist': song_artist,
-                'diff4_name': diff4_name,
-                'difficulties': diffs
+                'difficulties': diffs,
+                'inf_ver': inf_ver,
+                'sdvxin_id': '',
+                'ver_path': ['', ''],
+                'is_available': True
             }
 
-            if song_data in music_db.values():
+            songs = music_db.loc[(music_db['song_name'] == song_name)
+                                 & (music_db['song_artist'] == song_artist)
+                                 & (music_db['inf_ver'] == inf_ver)]
+            if len(songs) > 0:
                 # Skip song if it's a full check, otherwise stop scraping
                 if full_check:
                     continue
@@ -113,22 +120,22 @@ async def update_songs(full_check=False):
         if song_in_database:
             break
 
-    current_id = max([int(sid) for sid in music_db], default=-1) + 1
-    if music_db:
-        _, data_list = zip(*music_db.items())
-    else:
-        data_list = []
+    current_id = max(music_db.index, default=-1) + 1
+    indexes = []
     for song_data in reversed(new_data):
-        try:
-            song_id = data_list.index(song_data)
-        except ValueError:
-            song_id = current_id
+        songs = music_db.loc[(music_db['song_name'] == song_data['song_name'])
+                             & (music_db['song_artist'] == song_data['song_artist'])
+                             & (music_db['inf_ver'] == song_data['inf_ver'])]
+        if len(songs) == 0:
+            indexes.append(current_id)
             current_id += 1
+        else:
+            indexes.append(songs.indexes[0])
 
-        music_db[song_id] = song_data
-
-    with safe_open(SONG_DB_PATH, 'w', encoding='utf-8') as f:
-        json.dump(music_db, f)
+    indexes.reverse()
+    new_data = pandas.DataFrame(new_data, index=indexes)
+    music_db = new_data.combine_first(music_db)
+    music_db.to_json(SONG_DB_PATH, orient='index')
 
     print(f'<Scraper> Written {len(new_data)} new entry(s) to database.')
     return new_data
@@ -162,8 +169,7 @@ async def update_score(msg, sdvx_id, preview=False):
         sdvx_id_list = []
 
     # Load song database
-    with open(SONG_DB_PATH, 'r', encoding='utf-8') as f:
-        song_db = json.load(f)
+    song_db = pandas.read_json(SONG_DB_PATH, orient='index')
     id_lookup = get_song_lookup_table(song_db)
 
     completion_status = {}
@@ -264,7 +270,7 @@ async def update_score(msg, sdvx_id, preview=False):
     new_new_entries = []
     for key in new_entries:
         sid, diff = key.split('|')
-        sdata = song_db[sid]
+        sdata = song_db.loc[sid]
         if diff == '0':
             diff = 'NOV'
         elif diff == '1':
