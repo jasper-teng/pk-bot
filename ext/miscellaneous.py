@@ -128,7 +128,7 @@ class Images(commands.Cog):
         await self.send_image(ctx, 'ext/imgs/rave.jpg')
 
 
-class BreadGacha(commands.Cog, name='Bread gacha'):
+class BreadGacha(commands.Cog, name='Bread Facha'):
     def __init__(self):
         self._bread_counter = [0, 0, 0, 0]
         self._last_refresh = None

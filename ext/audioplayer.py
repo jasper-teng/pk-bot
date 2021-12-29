@@ -3,7 +3,7 @@ from discord import FFmpegOpusAudio
 from discord.ext import commands
 
 
-class AudioPlayer(commands.Cog, name='VC stuff'):
+class AudioPlayer(commands.Cog, name='VC Stuff'):
     def __init__(self):
         self._voice_client = None
         self._cur_channel = None
