@@ -19,6 +19,7 @@ extensions = [
     'ext.miscellaneous',
     # 'ext.mangadex',
     'ext.scheduler',
+    'ext.sdvxdb',
     'ext.sdvxin',
     'ext.viewer',
     'ext.volforce'
