@@ -62,12 +62,12 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
             await ctx.send(embed=embed)
             return
 
-        if db.loc[song_id].sdvxin_id == '':
+        if DB.loc[song_id].sdvxin_id == '':
             desc = ''
         else:
-            desc = f'\n\n**WARNING**: This overwrote existing SDVX.in ID {db.loc[song_id].sdvxin_id}'
-        db.loc[song_id].sdvxin_id = sdvxin_id
-        db.loc[song_id].ver_path = [sdvxin_id[:2], '']
+            desc = f'\n\n**WARNING**: This overwrote existing SDVX.in ID {DB.loc[song_id].sdvxin_id}'
+        DB.loc[song_id].sdvxin_id = sdvxin_id
+        DB.loc[song_id].ver_path = [sdvxin_id[:2], '']
         save_database()
         print(f'<SDVXDB> Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
 
