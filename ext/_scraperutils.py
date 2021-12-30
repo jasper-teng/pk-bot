@@ -68,7 +68,11 @@ async def fetch_page(session, url, use_post=False, **kwargs):
         else:
             exception_happened = False
     # noinspection PyUnboundLocalVariable
-    return_val = BeautifulSoup(await r.text(encoding='shift-jis'), 'html5lib')
+    try:
+        return_val = BeautifulSoup(await r.text(encoding='shift-jis'), 'html5lib')
+    except UnicodeDecodeError:
+        # fallback to utf-8 encoding
+        return_val = BeautifulSoup(await r.text(encoding='utf-8'), 'html5lib')
 
     if session_was_none:
         await session.close()
