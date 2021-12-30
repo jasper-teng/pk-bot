@@ -120,8 +120,8 @@ async def _search(ctx, query, list_all=False):
 async def send_result(ctx, song_id):
     d = DB.loc[song_id]
     suffix = 'e.png' if d.difficulties[3] == 0 else 'm.png'
-    diff_names = [BASE_DIFF_NAMES[i] for i, lv in enumerate(d.difficulties) if lv != 0]
-    urls = [BASE_DIFF_SUFFIX[i] for i, lv in enumerate(d.difficulties) if lv != 0]
+    diff_names = [BASE_DIFF_NAMES[i] for i, lv in enumerate(d.difficulties)]
+    urls = [BASE_DIFF_SUFFIX[i] for i, lv in enumerate(d.difficulties)]
     urls = ['/'.join([BASE_DOMAIN, d.ver_path[0], d.sdvxin_id + s + '.htm']) for s in urls]
 
     if d.difficulties[4] != 0:
@@ -131,7 +131,9 @@ async def send_result(ctx, song_id):
                             d.sdvxin_id + EXTRA_DIFF_SUFFIX[d.inf_ver] + '.htm'])
 
     links = []
-    for dn, lv, url in zip(diff_names, filter(None, d.difficulties), urls):
+    for dn, lv, url in zip(diff_names, d.difficulties, urls):
+        if lv == 0:
+            continue
         links.append(f'[{dn} {lv}]({url})')
 
     embed = Embed(title=d.song_artist, description=' - '.join(links))
