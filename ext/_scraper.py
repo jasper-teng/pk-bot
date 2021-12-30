@@ -1,5 +1,6 @@
-import pandas
+import json
 import os
+import pandas
 import time
 
 from discord import Embed
@@ -270,6 +271,7 @@ async def update_score(msg, sdvx_id, preview=False):
     new_new_entries = []
     for key in new_entries:
         sid, diff = key.split('|')
+        sid = int(sid)
         sdata = song_db.loc[sid]
         if diff == '0':
             diff = 'NOV'
