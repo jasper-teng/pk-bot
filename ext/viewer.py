@@ -79,7 +79,7 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         is_preview = 'preview' in args
 
         if self._assoc_obj.get(str(ctx.author.id)) is None:
-            await ctx.message.add_reaction('⛔')
+            await ctx.message.add_reaction('⚠')
             await ctx.reply('Register your SDVX ID first with `-viewer register`!', delete_after=10)
             return
         self._process_count += 1
