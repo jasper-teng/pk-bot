@@ -17,8 +17,9 @@ DEVNULL = subprocess.DEVNULL
 
 
 class LocalViewer(commands.Cog, name='Score Viewer'):
-    def __init__(self):
+    def __init__(self, bot):
         # global state
+        self._bot = bot
         try:
             with open(ASSOC_JSON, 'r') as f:
                 self._assoc_obj = json.load(f)
@@ -96,7 +97,7 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
         sdvx_id = self._assoc_obj.get(str(ctx.author.id))
 
         try:
-            output = await scraper.update_score(message, sdvx_id, preview=is_preview)
+            output = await scraper.update_score(message, sdvx_id, bot=self._bot, preview=is_preview)
         except Exception as e:
             self._process_count -= 1
             if self._process_count == 0:
@@ -138,4 +139,4 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
 
 
 def setup(bot):
-    bot.add_cog(LocalViewer())
+    bot.add_cog(LocalViewer(bot))

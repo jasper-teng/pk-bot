@@ -21,6 +21,9 @@ DEVNULL = subprocess.DEVNULL
 
 
 class SdvxDatabase(commands.Cog, name='SDVX Database'):
+    def __init__(self, bot):
+        self._bot = bot
+
     @commands.group(invoke_without_command=True)
     async def svdb(self, ctx, *args):
         """ SDVX database maintenance commands """
@@ -38,10 +41,10 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         embed.set_author(name='SDVX database handler')
         message = await ctx.send(embed=embed)
 
-        new_songs = await scraper.update_songs(is_full_update)
+        new_songs = await scraper.update_songs(bot=self._bot, full_check=is_full_update)
 
         if len(new_songs) > 0:
-            print(f'<SDVXDB> Updated database with scraped data ({len(new_songs)} entry(s)).')
+            self._bot.log('SDVX DB', f'Updated database with scraped data ({len(new_songs)} entry(s)).')
             desc = ['Automated song database update finished. Added the following songs:']
         else:
             desc = ['Automated song database update finished. No new songs added.']
@@ -74,7 +77,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         DB.loc[song_id, 'ver_path'] = [[sdvxin_id[:2]], ['']]
         save_database()
         refresh_database()
-        print(f'<SDVXDB> Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
+        self._bot.log('<SDVX DB>', f'Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
 
         embed = Embed(description=f'New song entry linked:\n{DB.loc[song_id].song_name} / {DB.loc[song_id].song_artist} ({song_id} <-> {sdvxin_id}).' + desc)
         embed.set_author(name='SDVX database handler')
@@ -107,6 +110,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
                         f'"song db update ({time.strftime("%Y%m%d%H%M%S", cur_time)})"',
                         stdout=DEVNULL, cwd=DB_DIR)
         subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=DB_DIR)
+        self._bot.log('SDVX DB', 'Changes committed to repository.')
         ctx.message.add_reaction('🆗')
 
     @svdb.command()
@@ -127,7 +131,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         DB.loc[song_id, 'song_name_alt'].append(new_alias)
         save_database()
         refresh_database()
-        print(f'<SDVXIN> Added new alias for ID {song_id}.')
+        self._bot.log('SDVX DB', f'Added new alias for ID {song_id}.')
 
         embed = Embed(description=f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({sdvxin_id}).')
         embed.set_author(name='SDVX database handler')
@@ -156,7 +160,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
 
         save_database()
         refresh_database()
-        print(f'<SDVXDB> Overwrote fields {list(d.keys())} in ID {sdvxin_id}.')
+        self._bot.log('SDVX DB', f'Overwrote fields {list(d.keys())} in ID {sdvxin_id}.')
 
         embed = Embed(description=f'Overwrote the following fields in ID {sdvxin_id}.\n\n' + pprint.pformat(d))
         embed.set_author(name='SDVX database handler')
@@ -168,4 +172,4 @@ def save_database():
 
 
 def setup(bot):
-    bot.add_cog(SdvxDatabase())
+    bot.add_cog(SdvxDatabase(bot))

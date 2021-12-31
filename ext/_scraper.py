@@ -46,14 +46,14 @@ def is_sdvx_id(st):
     return retval
 
 
-async def update_songs(full_check=False):
+async def update_songs(*, bot, full_check=False):
     try:
         music_db = pandas.read_json(SONG_DB_PATH, orient='index')
     except json.JSONDecodeError:
-        print('<Scraper> Database cannot be read. Overwriting.')
+        bot.log('Scraper', 'Song database cannot be read. Overwriting.')
         music_db = pandas.DataFrame()
     except IOError:
-        print('<Scraper> Creating new song database file.')
+        bot.log('Scraper', 'Creating new song database file.')
         music_db = pandas.DataFrame()
     new_data = []
 
@@ -138,11 +138,11 @@ async def update_songs(full_check=False):
     music_db = new_data.combine_first(music_db)
     music_db.to_json(SONG_DB_PATH, orient='index')
 
-    print(f'<Scraper> Written {len(new_data)} new entry(s) to database.')
+    bot.log('Scraper', f'Written {len(new_data)} new entry(s) to database.')
     return new_data
 
 
-async def update_score(msg, sdvx_id, preview=False):
+async def update_score(msg, sdvx_id, *, bot, preview=False):
     # Load config info
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
@@ -163,10 +163,10 @@ async def update_score(msg, sdvx_id, preview=False):
         with open(PROFILE_LIST_PATH, 'r') as f:
             sdvx_id_list = json.load(f)
     except json.JSONDecodeError:
-        print('<Scraper> Database cannot be read. Overwriting.')
+        bot.log('Scraper', 'Profile list cannot be read. Overwriting.')
         sdvx_id_list = []
     except IOError:
-        print('<Scraper> Existing data not found. Creating new file.')
+        bot.log('Scraper', 'Existing profile list not found. Creating new file.')
         sdvx_id_list = []
 
     # Load song database
@@ -184,7 +184,7 @@ async def update_score(msg, sdvx_id, preview=False):
     try:
         max_page = int(soup.select('.page_num')[-1].string)
     except IndexError as e:
-        print(f'<Scraper> Couldn\'t scrape ID {sdvx_id}. Scores may not be public, or profile does not exist.')
+        bot.log('Scraper', f'Couldn\'t scrape ID {sdvx_id}. Scores may not be public, or profile does not exist.')
         completion_status[sdvx_id] = False
         raise e
 
@@ -193,10 +193,10 @@ async def update_score(msg, sdvx_id, preview=False):
         with open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'r') as f:
             player_db = json.load(f)
     except json.JSONDecodeError:
-        print(f'<Scraper> Database cannot be read. Overwriting {sdvx_id}.json.')
+        bot.log('Scraper', f'Database cannot be read. Overwriting {sdvx_id}.json.')
         player_db = {}
     except IOError:
-        print(f'<Scraper> Creating new file for ID {sdvx_id}.')
+        bot.log('Scraper', f'Creating new file for ID {sdvx_id}.')
         player_db = {}
 
     # Get profile data
@@ -232,7 +232,7 @@ async def update_score(msg, sdvx_id, preview=False):
             try:
                 song_id = id_lookup[song_name, song_artist]
             except KeyError:
-                print(f'<Scraper> Warning: cannot match ({song_name}, {song_artist})')
+                # bot.log('Scraper', f'Warning: cannot match ({song_name}, {song_artist})')
                 unsaved_songs.add((song_name, song_artist))
                 continue
 
@@ -241,9 +241,10 @@ async def update_score(msg, sdvx_id, preview=False):
                 score_node_str = list(score_node.stripped_strings)[0]
                 
                 if not score_node:
-                    print(f'{K_SCOREURL}?rival_id={sdvx_id}&page={pg}&sort_id=0&lv=1048575')
-                    print(row.prettify())
-                    print(song_name)
+                    pass
+                    # print(f'{K_SCOREURL}?rival_id={sdvx_id}&page={pg}&sort_id=0&lv=1048575')
+                    # print(row.prettify())
+                    # print(song_name)
 
                 if score_node_str != '0':
                     clear_mark_url = score_node.select_one('img')['src']
@@ -294,11 +295,11 @@ async def update_score(msg, sdvx_id, preview=False):
             if sdvx_id not in sdvx_id_list:
                 sdvx_id_list.append(sdvx_id)
 
-            print(f'<Scraper> {len(new_entries)} new entry(s) saved to {sdvx_id}.json.')
+            bot.log('Scraper', f'{len(new_entries)} new entry(s) saved to {sdvx_id}.json.')
         else:
-            print(f'<Scraper> {len(new_entries)} new entry(s) found for {sdvx_id}.')
+            bot.log('Scraper', f'{len(new_entries)} new entry(s) found for {sdvx_id}.')
     else:
-        print(f'<Scraper> No new entries found for {sdvx_id}.')
+        bot.log('Scraper', f'No new entries found for {sdvx_id}.')
     completion_status[sdvx_id] = True
 
     await update_message(msg, sdvx_id, completion_status)

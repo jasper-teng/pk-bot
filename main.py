@@ -20,7 +20,6 @@ extensions = [
     'ext.audioplayer',
     'ext.cv',
     'ext.miscellaneous',
-    # 'ext.mangadex',
     'ext.scheduler',
     'ext.sdvxdb',
     'ext.sdvxin',
@@ -35,15 +34,19 @@ async def reload(ctx, *args):
     if not args:
         for ext in list(bot.extensions):
             bot.reload_extension(ext)
+        bot.log('Bot', 'Reloaded all modules.')
     else:
+        reloaded = []
         for arg in args:
             # silently ignore extensions not present
             if arg in bot.extensions:
                 bot.reload_extension(arg)
+                reloaded.append(arg)
             elif f'ext.{arg}' in bot.extensions:
                 bot.reload_extension(f'ext.{arg}')
+                reloaded.append(f'ext.{arg}')
+        bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
 
-    print('Reloaded module(s).')
     await ctx.message.add_reaction('🆗')
 
 
@@ -66,14 +69,20 @@ async def error_handler(ctx, err):
         traceback_log.append(data)
         with open(TRACEBACK_LOG_PATH, 'r') as f:
             json.dump(traceback_log, f)
-        # await ctx.reply(f'{type(err).__name__}: {err}\nTraceback: ```{tb}```', delete_after=10)
+        bot.log('Bot', f'Logged {type(err).__name__} to traceback log.')
 
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} has connected to Discord!')
+    bot.log('Bot', f'{bot.user} has connected to Discord!')
+
+
+def log(header, content):
+    time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    print(f'[{time_str}] <{header}> {content}')
 
 
 for _ext in extensions:
     bot.load_extension(_ext)
+bot.log = log
 bot.run(TOKEN)
