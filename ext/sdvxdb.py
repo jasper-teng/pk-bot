@@ -50,7 +50,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
             desc = ['Automated song database update finished. No new songs added.']
 
         for song_data in new_songs:
-            desc.append(f'- {song_data["song_name"]} / {song_data["song_artist"]}')
+            desc.append(escape_markdown(f'- {song_data["song_name"]} / {song_data["song_artist"]}'))
         embed = Embed(description='\n'.join(desc))
         embed.set_author(name='SDVX database handler')
         refresh_database()
@@ -79,7 +79,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         refresh_database()
         self._bot.log('<SDVX DB>', f'Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
 
-        embed = Embed(description=f'New song entry linked:\n{DB.loc[song_id].song_name} / {DB.loc[song_id].song_artist} ({song_id} <-> {sdvxin_id}).' + desc)
+        embed = Embed(description=escape_markdown(f'New song entry linked:\n{DB.loc[song_id].song_name} / {DB.loc[song_id].song_artist} ({song_id} <-> {sdvxin_id}).' + desc))
         embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 
@@ -95,7 +95,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         else:
             desc = []
             for song in songs.itertuples():
-                desc.append(f'- {song.song_name} / {song.song_artist} (ID {song.Index})')
+                desc.append(escape_markdown(f'- {song.song_name} / {song.song_artist} (ID {song.Index})'))
             embed = Embed(title='Missing SDVX.in IDs:',
                           description='\n'.join(desc))
             embed.set_author(name='SDVX database handler')
@@ -116,16 +116,18 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
     @svdb.command()
     @commands.has_role(ROLE_ID)
     async def addalias(self, ctx, sdvxin_id, *, new_alias):
-        """ Adds a song title alias for a given song ID. """
+        """
+        Adds a song title alias for a given song ID.
+        
+        If a SDVX.in entry with that ID is not found,
+        ID is assumed to be the database ID.
+        """
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if len(res) == 0:
-            embed = Embed(title=f'Results for ID query "{sdvxin_id}":',
-                          description=f'No song with ID {sdvxin_id} found!')
-            embed.set_author(name='SDVX database handler')
-            await ctx.send(embed=embed)
-            return
+            song_id = int(sdvxin_id)
+        else:
+            song_id = res.index[0]
 
-        song_id = res.index[0]
         if not new_alias.isascii():
             raise ValueError(f'Alias must be ASCII only. (got "{new_alias}")')
         DB.loc[song_id, 'song_name_alt'].append(new_alias)
@@ -133,25 +135,26 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         refresh_database()
         self._bot.log('SDVX DB', f'Added new alias for ID {song_id}.')
 
-        embed = Embed(description=f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({sdvxin_id}).')
+        embed = Embed(description=escape_markdown(f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({sdvxin_id}).'))
         embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
     async def overridefield(self, ctx, sdvxin_id, *, json_string):
-        """ Overwrites fields given a song ID. """
+        """
+        Overwrites fields given a song ID.
+        
+        If a SDVX.in entry with that ID is not found,
+        ID is assumed to be the database ID.
+        """
         res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
         if len(res) == 0:
-            embed = Embed(title=f'Results for ID query "{sdvxin_id}":',
-                          description=f'No song with ID {sdvxin_id} found!')
-            embed.set_author(name='SDVX database handler')
-            await ctx.send(embed=embed)
-            return
+            song_id = int(sdvxin_id)
+        else:
+            song_id = res.index[0]
 
-        song_id = res.index[0]
         valid_fields = DB.columns
-
         d = json.loads(json_string)
         d = {k: d[k] for k in valid_fields if k in d}
 
