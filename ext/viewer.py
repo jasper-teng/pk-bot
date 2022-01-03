@@ -6,6 +6,7 @@ import ext._scraper as scraper
 
 from discord import Embed
 from discord.ext import commands
+from discord.utils import escape_markdown
 from dotenv import load_dotenv
 
 # Script constant
@@ -120,14 +121,14 @@ class LocalViewer(commands.Cog, name='Score Viewer'):
             else:
                 desc += '\n\n' + 'New entries added:'
             for sstr in output['new_entry'][:self._max_output_lines]:
-                desc += f'\n- {sstr}'
+                desc += escape_markdown(f'\n- {sstr}')
             if len(output['new_entry']) > self._max_output_lines:
                 entry_word = 'entry' if (len(output['new_entry']) == self._max_output_lines + 1) else 'entries'
                 desc += f'\n... ({len(output["new_entry"]) - self._max_output_lines} {entry_word} omitted)'
         if len(output['skipped']) > 0:
             desc += '\n\n' + 'While scraping data, the following song(s) are missing from the database:'
             for sn, sa in output['skipped']:
-                desc += f'\n- {sn} / {sa}'
+                desc += escape_markdown(f'\n- {sn} / {sa}')
 
         embed = Embed(title='SDVX score scraper', description=desc)
         await ctx.reply(embed=embed)
