@@ -126,6 +126,11 @@ class Images(commands.Cog):
     async def rave(self, ctx):
         """ why does he look like rave """
         await self.send_image(ctx, 'ext/imgs/rave.jpg')
+    
+    @commands.command()
+    async def marsh(self, ctx):
+        """ 🇧🇷 """
+        await self.send_image(ctx, 'ext/imgs/marsh.png')
 
 
 class BreadGacha(commands.Cog, name='Bread Facha'):
