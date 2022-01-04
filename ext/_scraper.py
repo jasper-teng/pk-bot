@@ -149,9 +149,9 @@ async def update_score(msg, sdvx_id, *, bot, preview=False):
     uname = config['username']
     pword = config['password']
 
-    config['sdvx_ids'].append(sdvx_id)
+    # config['sdvx_ids'].append(sdvx_id)
     # Remove duplicates
-    config['sdvx_ids'] = list(set(config['sdvx_ids']))
+    # config['sdvx_ids'] = list(set(config['sdvx_ids']))
 
     with open(CONFIG_PATH, 'w') as f:
         json.dump(config, f)
