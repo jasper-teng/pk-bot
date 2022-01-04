@@ -10,7 +10,7 @@ from discord.ext import commands
 
 
 # TODO: refactor cvtest() to call smaller functions
-class ComputerVision(commands.Cog, name='Computer Vision'):
+class ComputerVision(commands.Cog, name='Computer vision'):
     def __init__(self):
         # Result screen template
         self._template = cv2.imread('ext/cvtest/template.png')
