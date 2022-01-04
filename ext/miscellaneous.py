@@ -132,8 +132,13 @@ class Images(commands.Cog):
         """ 🇧🇷 """
         await self.send_image(ctx, 'ext/imgs/marsh.png')
 
+    @commands.command(aliases=['bad', '👎'])
+    async def congrats(self, ctx):
+        """ thanks, i hate it """
+        await self.send_image(ctx, 'ext/imgs/congrats.png')
 
-class BreadGacha(commands.Cog, name='Bread Facha'):
+
+class BreadGacha(commands.Cog, name='Bread gacha'):
     def __init__(self):
         self._bread_counter = [0, 0, 0, 0]
         self._last_refresh = None
