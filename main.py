@@ -67,7 +67,7 @@ async def error_handler(ctx, err):
             'traceback': f'{type(err).__name__}: {err}\n{tb}'
         }
         traceback_log.append(data)
-        with open(TRACEBACK_LOG_PATH, 'r') as f:
+        with open(TRACEBACK_LOG_PATH, 'w') as f:
             json.dump(traceback_log, f)
         bot.log('Bot', f'Logged {type(err).__name__} to traceback log.')
 
