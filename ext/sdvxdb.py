@@ -10,7 +10,7 @@ from discord import Embed
 from discord.ext import commands
 from discord.utils import escape_markdown
 from dotenv import load_dotenv
-from ext.sdvxin import refresh_database
+from ext.sdvxin import refresh_database, get_aliases
 
 load_dotenv()
 ROLE_ID = int(os.getenv('BOT_HANDLER_ID'))
@@ -111,7 +111,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
                         stdout=DEVNULL, cwd=DB_DIR)
         subprocess.call('git push --porcelain', stdout=DEVNULL, stderr=DEVNULL, cwd=DB_DIR)
         self._bot.log('SDVX DB', 'Changes committed to repository.')
-        ctx.message.add_reaction('🆗')
+        await ctx.message.add_reaction('🆗')
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
@@ -136,6 +136,29 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         self._bot.log('SDVX DB', f'Added new alias for ID {song_id}.')
 
         embed = Embed(description=escape_markdown(f'Alias "{new_alias}" added for {DB.loc[song_id].song_name} ({sdvxin_id}).'))
+        embed.set_author(name='SDVX database handler')
+        await ctx.send(embed=embed)
+
+    @svdb.command(hidden=True)
+    @commands.has_role(ROLE_ID)
+    async def listalias(self, ctx, sdvxin_id):
+        """
+        Lists the aliases that match a given song ID.
+        
+        If a SDVX.in entry with that ID is not found,
+        ID is assumed to be the database ID.
+        """
+        res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
+        if len(res) == 0:
+            song_id = int(sdvxin_id)
+        else:
+            song_id = res.index[0]
+
+        aliases = get_aliases(song_id)
+        text = '\n'.join([f'"{escape_markdown(e)}"' for e in aliases])
+
+        embed = Embed(title=f'Aliases for {escape_markdown(DB.loc[song_id].song_name)} ({DB.loc[song_id].sdvxin_id}):',
+                      description=text)
         embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 

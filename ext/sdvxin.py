@@ -40,25 +40,6 @@ class SdvxInLinker(commands.Cog, name='sdvx.in'):
         """ Searches for a SDVX song title. """
         await _search(ctx, query)
 
-    @sdvxin.command(hidden=True)
-    @commands.has_role(ROLE_ID)
-    async def listalias(self, ctx, *, song_id):
-        res = DB.loc[DB['sdvxin_id'] == song_id]
-        if res.shape[0] == 0:
-            embed = Embed(title=f'No song with ID {song_id} found!')
-            embed.set_author(name=f'Results for ID query "{song_id}":')
-            embed.set_footer(text='Powered by sdvx.in')
-            await ctx.send(embed=embed)
-            return
-
-        song_id = res.index[0]
-        aliases = get_aliases(song_id)
-        text = '\n'.join([f'"{escape_markdown(e)}"' for e in aliases])
-
-        embed = Embed(title=f'Aliases for {DB.loc[song_id].song_name} ({DB.loc[song_id].sdvxin_id}):', description=text)
-        embed.set_footer(text='Powered by sdvx.in')
-        await ctx.send(embed=embed)
-
 
 async def _search(ctx, query, list_all=False):
     query = query.lower()
