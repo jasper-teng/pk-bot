@@ -34,7 +34,7 @@ async def reload(ctx, *args):
     if not args:
         for ext in list(bot.extensions):
             bot.reload_extension(ext)
-        await bot.log('Bot', 'Reloaded all modules.')
+        bot.log('Bot', 'Reloaded all modules.')
     else:
         reloaded = []
         for arg in args:
@@ -45,7 +45,7 @@ async def reload(ctx, *args):
             elif f'ext.{arg}' in bot.extensions:
                 bot.reload_extension(f'ext.{arg}')
                 reloaded.append(f'ext.{arg}')
-        await bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
+        bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
 
     await ctx.message.add_reaction('🆗')
 
@@ -69,17 +69,17 @@ async def error_handler(ctx, err):
         traceback_log.append(data)
         with open(TRACEBACK_LOG_PATH, 'w', encoding='utf-8') as f:
             json.dump(traceback_log, f, indent=2)
-        await bot.log('Bot', f'Logged {type(err).__name__} to traceback log.')
+        bot.log('Bot', f'Logged {type(err).__name__} to traceback log.')
 
 
 @bot.event
 async def on_ready():
-    await bot.log('Bot', f'{bot.user} has connected to Discord!')
+    bot.log('Bot', f'{bot.user} has connected to Discord!')
 
 
-async def log(header, content):
+def log(header, content):
     time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    async with open('pk-bot.log', 'a', encoding='utf-8') as f:
+    with open('pk-bot.log', 'a', encoding='utf-8') as f:
         f.write(f'[{time_str}] <{header}> {content}\n')
 
 
