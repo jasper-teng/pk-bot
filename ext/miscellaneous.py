@@ -10,6 +10,7 @@ class Images(commands.Cog):
     def __init__(self):
         self._denzel = 0
         self._hydrate = 0
+        self._marsh = 1
 
     @staticmethod
     async def send_image(ctx, img_path):
@@ -130,7 +131,11 @@ class Images(commands.Cog):
     @commands.command()
     async def marsh(self, ctx):
         """ 🇧🇷 """
-        await self.send_image(ctx, 'ext/imgs/marsh.png')
+        if self._marsh:
+            await self.send_image(ctx, 'ext/imgs/marsh1.png')
+        else:
+            await self.send_image(ctx, 'ext/imgs/marsh2.png')
+        self._marsh = 1 - self._marsh
 
     @commands.command(aliases=['bad', '👎'])
     async def congrats(self, ctx):
