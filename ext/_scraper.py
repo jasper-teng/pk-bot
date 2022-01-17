@@ -50,10 +50,10 @@ async def update_songs(*, bot, full_check=False):
     try:
         music_db = pandas.read_json(SONG_DB_PATH, orient='index')
     except json.JSONDecodeError:
-        bot.log('Scraper', 'Song database cannot be read. Overwriting.')
+        await bot.log('Scraper', 'Song database cannot be read. Overwriting.')
         music_db = pandas.DataFrame()
     except IOError:
-        bot.log('Scraper', 'Creating new song database file.')
+        await bot.log('Scraper', 'Creating new song database file.')
         music_db = pandas.DataFrame()
     new_data = []
 
@@ -138,13 +138,13 @@ async def update_songs(*, bot, full_check=False):
     music_db = new_data.combine_first(music_db)
     music_db.to_json(SONG_DB_PATH, orient='index')
 
-    bot.log('Scraper', f'Written {len(new_data)} new entry(s) to database.')
+    await bot.log('Scraper', f'Written {len(new_data)} new entry(s) to database.')
     return new_data
 
 
 async def update_score(msg, sdvx_id, *, bot, preview=False):
     # Load config info
-    with open(CONFIG_PATH, 'r') as f:
+    with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         config = json.load(f)
     uname = config['username']
     pword = config['password']
@@ -153,20 +153,20 @@ async def update_score(msg, sdvx_id, *, bot, preview=False):
     # Remove duplicates
     # config['sdvx_ids'] = list(set(config['sdvx_ids']))
 
-    with open(CONFIG_PATH, 'w') as f:
+    with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
         json.dump(config, f)
 
     # Get session object
     session = await login_routine(uname, pword)
 
     try:
-        with open(PROFILE_LIST_PATH, 'r') as f:
+        with open(PROFILE_LIST_PATH, 'r', encoding='utf-8') as f:
             sdvx_id_list = json.load(f)
     except json.JSONDecodeError:
-        bot.log('Scraper', 'Profile list cannot be read. Overwriting.')
+        await bot.log('Scraper', 'Profile list cannot be read. Overwriting.')
         sdvx_id_list = []
     except IOError:
-        bot.log('Scraper', 'Existing profile list not found. Creating new file.')
+        await bot.log('Scraper', 'Existing profile list not found. Creating new file.')
         sdvx_id_list = []
 
     # Load song database
@@ -184,19 +184,21 @@ async def update_score(msg, sdvx_id, *, bot, preview=False):
     try:
         max_page = int(soup.select('.page_num')[-1].string)
     except IndexError as e:
-        bot.log('Scraper', f'Couldn\'t scrape ID {sdvx_id}. Scores may not be public, or profile does not exist.')
+        await bot.log('Scraper',
+            f'Couldn\'t scrape ID {sdvx_id}. Scores may '
+            f'not be public, or profile does not exist.')
         completion_status[sdvx_id] = False
         raise e
 
     # Load/initialize score database
     try:
-        with open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'r') as f:
+        with open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'r', encoding='utf-8') as f:
             player_db = json.load(f)
     except json.JSONDecodeError:
-        bot.log('Scraper', f'Database cannot be read. Overwriting {sdvx_id}.json.')
+        await bot.log('Scraper', f'Database cannot be read. Overwriting {sdvx_id}.json.')
         player_db = {}
     except IOError:
-        bot.log('Scraper', f'Creating new file for ID {sdvx_id}.')
+        await bot.log('Scraper', f'Creating new file for ID {sdvx_id}.')
         player_db = {}
 
     # Get profile data
@@ -239,7 +241,7 @@ async def update_score(msg, sdvx_id, *, bot, preview=False):
             for diff, row in enumerate(song_rows[1:]):
                 score_node = row.select_one('#score_col_3') or row.select_one('#score_col_4')
                 score_node_str = list(score_node.stripped_strings)[0]
-                
+
                 if not score_node:
                     pass
                     # print(f'{K_SCOREURL}?rival_id={sdvx_id}&page={pg}&sort_id=0&lv=1048575')
@@ -260,7 +262,9 @@ async def update_score(msg, sdvx_id, *, bot, preview=False):
     new_entries = []
     for key, data in scores.items():
         prev_data = player_db['scores'].get(key)
-        if prev_data is None or data['clear_mark'] != prev_data['clear_mark'] or data['score'] != prev_data['score']:
+        if (prev_data is None
+                or data['clear_mark'] != prev_data['clear_mark']
+                or data['score'] != prev_data['score']):
             # Store old score for comparison
             if prev_data:
                 player_db['updated_scores'][key] = prev_data
@@ -290,22 +294,24 @@ async def update_score(msg, sdvx_id, *, bot, preview=False):
     # Save data
     if new_entries:
         if not preview:
-            with safe_open(os.path.join(REL_PATH, 'scores', f'{sdvx_id}.json'), 'w', encoding='utf-8') as f:
+            with safe_open(os.path.join(REL_PATH,
+                                        'scores',
+                                        f'{sdvx_id}.json'), 'w', encoding='utf-8') as f:
                 json.dump(player_db, f)
             if sdvx_id not in sdvx_id_list:
                 sdvx_id_list.append(sdvx_id)
 
-            bot.log('Scraper', f'{len(new_entries)} new entry(s) saved to {sdvx_id}.json.')
+            await bot.log('Scraper', f'{len(new_entries)} new entry(s) saved to {sdvx_id}.json.')
         else:
-            bot.log('Scraper', f'{len(new_entries)} new entry(s) found for {sdvx_id}.')
+            await bot.log('Scraper', f'{len(new_entries)} new entry(s) found for {sdvx_id}.')
     else:
-        bot.log('Scraper', f'No new entries found for {sdvx_id}.')
+        await bot.log('Scraper', f'No new entries found for {sdvx_id}.')
     completion_status[sdvx_id] = True
 
     await update_message(msg, sdvx_id, completion_status)
 
     sdvx_id_list.sort()
-    with safe_open(PROFILE_LIST_PATH, 'w') as f:
+    with safe_open(PROFILE_LIST_PATH, 'w', encoding='utf-8') as f:
         json.dump(sdvx_id_list, f)
 
     await session.close()

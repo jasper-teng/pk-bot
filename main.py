@@ -1,10 +1,10 @@
 # bot.py
-import discord
 import json
 import os
 import time
 import traceback
 
+import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -34,7 +34,7 @@ async def reload(ctx, *args):
     if not args:
         for ext in list(bot.extensions):
             bot.reload_extension(ext)
-        bot.log('Bot', 'Reloaded all modules.')
+        await bot.log('Bot', 'Reloaded all modules.')
     else:
         reloaded = []
         for arg in args:
@@ -45,7 +45,7 @@ async def reload(ctx, *args):
             elif f'ext.{arg}' in bot.extensions:
                 bot.reload_extension(f'ext.{arg}')
                 reloaded.append(f'ext.{arg}')
-        bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
+        await bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
 
     await ctx.message.add_reaction('🆗')
 
@@ -56,7 +56,7 @@ async def error_handler(ctx, err):
         tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=5))
         await ctx.message.add_reaction('⛔')
         try:
-            with open(TRACEBACK_LOG_PATH, 'r') as f:
+            with open(TRACEBACK_LOG_PATH, 'r', 'w', encoding='utf-8') as f:
                 traceback_log = json.load(f)
         except IOError:
             traceback_log = []
@@ -67,19 +67,20 @@ async def error_handler(ctx, err):
             'traceback': f'{type(err).__name__}: {err}\n{tb}'
         }
         traceback_log.append(data)
-        with open(TRACEBACK_LOG_PATH, 'w') as f:
-            json.dump(traceback_log, f)
-        bot.log('Bot', f'Logged {type(err).__name__} to traceback log.')
+        with open(TRACEBACK_LOG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(traceback_log, f, indent=2)
+        await bot.log('Bot', f'Logged {type(err).__name__} to traceback log.')
 
 
 @bot.event
 async def on_ready():
-    bot.log('Bot', f'{bot.user} has connected to Discord!')
+    await bot.log('Bot', f'{bot.user} has connected to Discord!')
 
 
-def log(header, content):
+async def log(header, content):
     time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f'[{time_str}] <{header}> {content}')
+    async with open('pk-bot.log', 'a', encoding='utf-8') as f:
+        f.write(f'[{time_str}] <{header}> {content}\n')
 
 
 for _ext in extensions:

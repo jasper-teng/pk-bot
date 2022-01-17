@@ -181,10 +181,10 @@ class ComputerVision(commands.Cog, name='Computer vision'):
             reply += '.'
             await ctx.reply(reply, file=File(outbuf, 'output.png'))
 
-            if ctx.guild is None:
-                _, outbuf = cv2.imencode('.png', card_name_out)
-                outbuf = io.BytesIO(outbuf)
-                await ctx.send(file=File(outbuf, 'card_name.png'))
+            # if ctx.guild is None:
+            #     _, outbuf = cv2.imencode('.png', card_name_out)
+            #     outbuf = io.BytesIO(outbuf)
+            #     await ctx.send(file=File(outbuf, 'card_name.png'))
 
 
 def setup(bot):
