@@ -56,7 +56,7 @@ async def error_handler(ctx, err):
         tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__, limit=5))
         await ctx.message.add_reaction('⛔')
         try:
-            with open(TRACEBACK_LOG_PATH, 'r', 'w', encoding='utf-8') as f:
+            with open(TRACEBACK_LOG_PATH, 'r', encoding='utf-8') as f:
                 traceback_log = json.load(f)
         except IOError:
             traceback_log = []
