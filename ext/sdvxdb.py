@@ -1,15 +1,16 @@
 import json
 import os
-import pandas
 import pprint
 import subprocess
 import time
-import ext._scraper as scraper
 
+import pandas
 from discord import Embed
 from discord.ext import commands
 from discord.utils import escape_markdown
 from dotenv import load_dotenv
+
+import ext._scraper as scraper
 from ext.sdvxin import refresh_database, get_aliases
 
 load_dotenv()
