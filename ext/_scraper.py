@@ -78,9 +78,9 @@ async def update_songs(*, bot, full_check=False):
             diff_info = music_info.select_one('.level')
             diff_dict = {e['class'][0]: int(e.string) for e in diff_info.children if hasattr(e, 'contents')}
             diffs = [0] * 5
-            inf_ver = None
-
+            inf_ver = 0
             song_in_database = False
+
             for diff_name, diff in diff_dict.items():
                 if diff_name == 'nov':
                     diffs[0] = diff
@@ -106,13 +106,10 @@ async def update_songs(*, bot, full_check=False):
             }
 
             songs = music_db.loc[(music_db['song_name'] == song_name)
-                                 & (music_db['song_artist'] == song_artist)
-                                 & (music_db['inf_ver'] == inf_ver)]
+                                 & (music_db['song_artist'] == song_artist)]
             if len(songs) > 0:
                 # Skip song if it's a full check, otherwise stop scraping
-                if full_check:
-                    continue
-                else:
+                if not full_check:
                     song_in_database = True
                     break
 
@@ -125,8 +122,7 @@ async def update_songs(*, bot, full_check=False):
     indexes = []
     for song_data in reversed(new_data):
         songs = music_db.loc[(music_db['song_name'] == song_data['song_name'])
-                             & (music_db['song_artist'] == song_data['song_artist'])
-                             & (music_db['inf_ver'] == song_data['inf_ver'])]
+                             & (music_db['song_artist'] == song_data['song_artist'])]
         if len(songs) == 0:
             indexes.append(current_id)
             current_id += 1
@@ -139,7 +135,7 @@ async def update_songs(*, bot, full_check=False):
     music_db.to_json(SONG_DB_PATH, orient='index')
 
     bot.log('Scraper', f'Written {len(new_data)} new entry(s) to database.')
-    return new_data
+    return new_data.to_dict(orient='records')
 
 
 async def update_score(msg, sdvx_id, *, bot, preview=False):
