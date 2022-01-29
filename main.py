@@ -45,7 +45,10 @@ async def reload(ctx, *args):
             elif f'ext.{arg}' in bot.extensions:
                 bot.reload_extension(f'ext.{arg}')
                 reloaded.append(f'ext.{arg}')
-        bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
+        if reloaded:
+            bot.log('Bot', f'Reloaded modules: {", ".join(reloaded)}.')
+        else:
+            bot.log('Bot', f'Did not reload any modules.')
 
     await ctx.message.add_reaction('🆗')
 
