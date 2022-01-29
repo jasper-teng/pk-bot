@@ -71,7 +71,7 @@ class Scheduler(commands.Cog):
             await channel.send(embed=embed)
 
         if desc or 'doratama:last_ch' not in self._db:
-            self._db['doratama:last_ch'] = last_ch
+            self._db['doratama:last_ch'] = len(chapters)
             with open(self._db_path, 'w') as f:
                     json.dump(self._db, f)
 
