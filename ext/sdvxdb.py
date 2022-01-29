@@ -55,32 +55,45 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
         embed = Embed(description='\n'.join(desc))
         embed.set_author(name='SDVX database handler')
         refresh_database()
+        DB = pandas.read_json(DB_PATH, orient='index')
         await message.edit(embed=embed)
 
     @svdb.command()
     @commands.has_role(ROLE_ID)
-    async def link(self, ctx, song_id, sdvxin_id):
-        """ Attaches a SDVX.in ID to a song entry. """
-        song_id = int(song_id)
-        res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
-        if len(res) == 1:
-            embed = Embed(title=f'Results for ID query "{sdvxin_id}":',
-                          description=f'Song with ID {sdvxin_id} already exists!')
+    async def link(self, ctx, *ids):
+        """
+        Attaches a SDVX.in ID to a song entry.
+        
+        Database ID comes first, followed by SDVX.in ID.
+        Providing multiple pairs in one command is allowed.
+        """
+        if len(ids) % 2 != 0:
+            embed = Embed(description='Found unpaired ID in argument list.')
             embed.set_author(name='SDVX database handler')
             await ctx.send(embed=embed)
             return
 
-        if DB.loc[song_id].sdvxin_id == '':
-            desc = ''
-        else:
-            desc = f'\n\n**WARNING**: This overwrote existing SDVX.in ID {DB.loc[song_id].sdvxin_id}'
-        DB.loc[song_id, 'sdvxin_id'] = sdvxin_id
-        DB.loc[song_id, 'ver_path'] = [[sdvxin_id[:2]], ['']]
+        embed_content = ['New song entry linked:']
+        for song_id, sdvxin_id in zip(*[iter(ids)]*2, strict=True):
+            song_id = int(song_id)
+            res = DB.loc[DB['sdvxin_id'] == sdvxin_id]
+            if len(res) == 1:
+                embed = Embed(title=f'Results for ID query "{sdvxin_id}":',
+                              description=f'Song with ID {sdvxin_id} already exists!')
+                embed.set_author(name='SDVX database handler')
+                await ctx.send(embed=embed)
+                return
+
+            embed_content.append(f'{DB.loc[song_id].song_name} / {DB.loc[song_id].song_artist} ({song_id} <-> {sdvxin_id}).')
+            if DB.loc[song_id].sdvxin_id != '':
+                embed_content.append(f'  [WARNING] This overwrote existing SDVX.in ID {DB.loc[song_id].sdvxin_id}')
+            DB.loc[song_id, 'sdvxin_id'] = sdvxin_id
+            DB.loc[song_id, 'ver_path'] = [[sdvxin_id[:2]], ['']]
+            self._bot.log('<SDVX DB>', f'Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
+
         save_database()
         refresh_database()
-        self._bot.log('<SDVX DB>', f'Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
-
-        embed = Embed(description=escape_markdown(f'New song entry linked:\n{DB.loc[song_id].song_name} / {DB.loc[song_id].song_artist} ({song_id} <-> {sdvxin_id}).' + desc))
+        embed = Embed(description=escape_markdown('\n'.join(embed_content)))
         embed.set_author(name='SDVX database handler')
         await ctx.send(embed=embed)
 
