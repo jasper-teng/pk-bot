@@ -89,7 +89,7 @@ class SdvxDatabase(commands.Cog, name='SDVX Database'):
                 embed_content.append(f'  [WARNING] This overwrote existing SDVX.in ID {DB.loc[song_id].sdvxin_id}')
             DB.loc[song_id, 'sdvxin_id'] = sdvxin_id
             DB.loc[song_id, 'ver_path'] = [[sdvxin_id[:2]], ['']]
-            self._bot.log('<SDVX DB>', f'Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
+            self._bot.log('SDVX DB', f'Linked song entry ID {song_id} with SDVX.in ID {sdvxin_id}.')
 
         save_database()
         refresh_database()
